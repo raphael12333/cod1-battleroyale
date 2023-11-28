@@ -13,7 +13,7 @@ ___
 - rotate the player character when skydiving
   - it's planned to skydive at first person but at least for other players not to see each other skydiving standing
 - make a setgravity command
-  - i started one in my codextended fork, but it seems some "cl->ps.gravity = g_gravity" must be intercepted for it to work
+  - i started one in my codextended fork, but it seems some `cl->ps.gravity = g_gravity` must be intercepted for it to work
 - Automatize the zone cycle and randomize the locations
 - Make the plane to fly higher
 - Show the zone on the compass
