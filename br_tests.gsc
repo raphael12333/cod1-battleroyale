@@ -16,8 +16,7 @@ _init(register)
 		return;
 	level.br_tests = true;
 
-
-	zoneOriginStart = (1190, -1060, -520); //~center of map
+	zoneOriginStart = (1190, -1060, -520); //~center of map (zh_frenzy)
 	level.zone = spawn("script_model", zoneOriginStart);
 	level.zone.modelPath = "xmodel/playerhead_default"; //TODO: create an invisible model instead
 	level.zone.modelTag = "bip01 spine2";
@@ -80,7 +79,6 @@ _init(register)
 	level.zone.modes[11]["endSize"] = "0";
 
 	[[register]]("spawnPlayer", ::checkPlayerInZone, "thread");
-
 }
 _load()
 {
@@ -142,7 +140,6 @@ cmd_playzone(args)
 	self setupZone(zoneModeIndex);
 }
 
-
 cmd_land(args)
 {
     if(args.size != 1) {
@@ -150,65 +147,92 @@ cmd_land(args)
         return;
     }
 
-	self.hudInZoneCheck = newHudElem();
-	self.hudInZoneCheck.x = 50;
-	self.hudInZoneCheck.y = 130;
-	self.hudInZoneCheck.fontScale = 1;
-	self.hudInZoneCheck setText(&"^3Press [{+activate}] to jump");
 
-	self.hudJumpParachutefo = newHudElem();
-	self.hudJumpParachutefo.x = self.hudInZoneCheck.x;
-	self.hudJumpParachutefo.y = self.hudInZoneCheck.y + 20;
-	self.hudJumpParachutefo.fontScale = 1;
-	self.hudJumpParachutefo setText(&"^3Press [{+activate}] to open/close parachute");
+	//Anim testing
+	/*
+	self setClientCvar("cg_thirdPerson", "1");
+	self setAnim("pb_climbup"); //pb_climbup
+	return;
+	*/
 
 
-	self.god = true;
+	level.hudJump = newHudElem();
+	level.hudJump.x = 50;
+	level.hudJump.y = 130;
+	level.hudJump.fontScale = 1;
+	level.hudJump setText(&"^3Press [{+activate}] to jump");
 
+	level.hudParachute = newHudElem();
+	level.hudParachute.x = level.hudJump.x;
+	level.hudParachute.y = level.hudJump.y + 20;
+	level.hudParachute.fontScale = 1;
+	level.hudParachute setText(&"^3Press [{+activate}] to open/close parachute");
 
-	selfX = self.origin[0];
-	selfY = self.origin[1];
-	originPlanePOV = (selfX - 600, selfY, 1398);
-	self.planePOV = spawn("script_origin", originPlanePOV);
-	self.origin = self.planePOV.origin;
-    self linkto(self.planePOV);
-
-	planeStartOrigin = (selfX, selfY, 1521 - 400); // z = /viewpos prone zh_winter_plaza skybox
-	level.plane = spawn("script_model", planeStartOrigin);
+	//zh_frenzy
+	originPlaneTest = (2050, -14350, 8070);
+	level.plane = spawn("script_model", originPlaneTest);
 	level.plane setModel("xmodel/c47");
-	level.plane moveX(7000, 6);
+	level.plane.angles = (0, 90, 0);
 
-	self.planePOV moveX(7000, 6);
+	originPlanePovTest =
+		(level.plane.origin[0],
+		level.plane.origin[1] - 700,
+		level.plane.origin[2] + 400);
+	self.planePov = spawn("script_origin", originPlanePovTest);
+	self.origin = self.planePov.origin;
+	self linkto(self.planePov);
 
-	self setPlayerAngles(level.plane.angles);
-	self setClientCvar("cg_drawGun", "0");
-	self setClientCvar("cg_drawCrosshair", "0");
+	planePovAngles =
+		(level.plane.angles[0] + 25,
+		level.plane.angles[1],
+		level.plane.angles[2]);
+	self setPlayerAngles(planePovAngles);
 
-	//self takeAllWeapons();
-
-
+	moveDistance = 30000;
+	moveDelay = 22;
+	level.plane moveY(moveDistance, moveDelay);
+	self.planePov moveY(moveDistance, moveDelay);
 
 	self thread checkPlayerJumped();
 
-	self codam\_mm_mmm::message_player("^2INFO: ^7Landing test.");
+	wait moveDelay;
+	level.plane delete();
+
+	//self codam\_mm_mmm::message_player("^2INFO: ^7Landing test.");
 }
 
+//SKYDIVE FUNCTIONS
 checkPlayerJumped()
 {
 	for(;;)
 	{
 		if (self useButtonPressed())
-		{
-			delayJump = 0.20;
-			underPlaneOrigin = 
-				(self.planePOV.origin[0] - 500,
-				self.planePOV.origin[1],
+		{	
+			//TODO: team/weapon setup when creating gt file.
+			self.pers["team"] = "allies";
+			self.pers["weapon"] = "mosin_nagant_mp";
+			anglesBeforeSpawn = self getPlayerAngles();
+			self thread [[ level.gtd_call ]]("gt_spawnPlayer");
+
+			//self setClientCvar("cg_thirdPerson", "1"); //TODO: remove after tests
+
+			self.origin = self.planePov.origin;
+			self linkto(self.planePov);
+			self setPlayerAngles(anglesBeforeSpawn);
+
+			delayExitPlane = 0.20;
+			underPlaneOrigin =
+				(self.planePOV.origin[0],
+				self.planePOV.origin[1] - 500,
 				(self.planePOV.origin[2] - 700));
-			self.planePOV moveTo(underPlaneOrigin, delayJump);
-			wait delayJump;
+			self.planePOV moveTo(underPlaneOrigin, delayExitPlane);
+			wait delayExitPlane;
 
 			self unlink();
 			self.planePOV delete();
+
+			self.god = true; //TODO: remove after tests
+
 			self thread checkPlayerDive();
 
 			break;
@@ -218,23 +242,23 @@ checkPlayerJumped()
 }
 checkPlayerDive()
 {
-	self thread checkDiveDone();
+	self thread checkLanded();
 
-	setCvar("g_gravity", "200");
+	setCvar("g_gravity", "200"); //TODO: use "setgravity" like libcod instead
 
-	acceleration = 10;
-	friction = 0.975;
+	acceleration = 20;
+	friction = 0.975; //When not going forward/sides + not using parachute
 	
 	for(;;)
 	{
-		self endon("divedone");
+		self endon("landed");
 
 		velocity = self getvelocity();
 		angles = self getplayerangles();
 		forwardDirection = anglesToForward(angles);
 		speedScale = 1;
 
-		if (self forwardButtonPressed())
+		if (self forwardButtonPressed()) //TODO: same when diving on sides
 		{
 			speedScale = 1.5;
 			velocity =
@@ -247,38 +271,32 @@ checkPlayerDive()
 			velocity = maps\mp\_utility::vectorScale(velocity, friction);
 		}
 
-		self setmovespeedscale(speedScale);
-		self setvelocity(velocity);
+		self setMoveSpeedScale(speedScale);
+		self setVelocity(velocity);
 		wait .05;
 	}
 }
-checkDiveDone()
+checkLanded()
 {
 	for(;;)
 	{
 		if (self isOnGround())
 		{
-			self notify("divedone");
-			self setmovespeedscale(1);
+			self notify("landed");
+
+			self setMoveSpeedScale(1);
 			setCvar("g_gravity", "800");
-
-			self setClientCvar("cg_drawGun", "1");
-			self setClientCvar("cg_drawCrosshair", "1");
-
+			
+			//self setClientCvar("cg_thirdPerson", "0");
 
 			break;
 		}
 		wait .05;
 	}
 }
+//SKYDIVE FUNCTIONS END
 
-
-
-
-
-
-
-
+//ZONE FUNCTIONS
 setupZone(zoneModeIndex)
 {
 	for(i = 0; i < level.zone.modes[zoneModeIndex]["name"].size; i++)
@@ -378,7 +396,7 @@ checkPlayerInZone(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b0, b1, b2, b2, b4, b5
 		{
 			if (!isDefined(self.hudInZoneCheck))
 			{
-				self.hudInZoneCheck = newClientHudElem(self);
+				self.hudInZoneCheck = newClientHudElem(self); //TODO: improve design for release
 				self.hudInZoneCheck.x = 30;
 				self.hudInZoneCheck.y = 150;
 				self.hudInZoneCheck.font = "bigfixed";
@@ -466,3 +484,4 @@ checkPlayerInZone(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b0, b1, b2, b2, b4, b5
 		wait .05;
 	}
 }
+//ZONE FUNCTIONS END
