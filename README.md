@@ -14,4 +14,4 @@ ___
 - Automatize the zone cycle and randomize the locations
 - Show the zone on compass
 ___
-You can see some videos here: https://www.youtube.com/channel/UCiq2c23nxeMk6gcMqozrebQ
+You can see some videos here: https://www.youtube.com/playlist?list=PLTiI1XPSd-uULSzEWCV-eEZ_eunBUiWZq
