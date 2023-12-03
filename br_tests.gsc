@@ -156,6 +156,7 @@ cmd_land(args)
 	*/
 
 
+
 	level.hudJump = newHudElem();
 	level.hudJump.x = 50;
 	level.hudJump.y = 130;
@@ -244,7 +245,7 @@ checkPlayerDive()
 {
 	self thread checkLanded();
 
-	setCvar("g_gravity", "200"); //TODO: use "setgravity" like libcod instead
+	self setGravity(200);
 
 	acceleration = 20;
 	friction = 0.975; //When not going forward/sides + not using parachute
@@ -285,7 +286,9 @@ checkLanded()
 			self notify("landed");
 
 			self setMoveSpeedScale(1);
-			setCvar("g_gravity", "800");
+
+			g_gravity = getCvar("g_gravity");
+			self setGravity(g_gravity);
 			
 			//self setClientCvar("cg_thirdPerson", "0");
 
