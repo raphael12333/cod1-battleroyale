@@ -1,7 +1,7 @@
 ## Gametype under development, currently not playable
 
 ### Requirements to run the tests
-###### `                     `
+
 I started by doing tests using *br_tests.gsc* on a dm, it uses custom MiscMod commands, to try this file you would need to:
 - setup [MiscMod](https://cod.pm/guide/d0da8d/installing-and-configuring-codam-miscmod)
 - read the comments at the beginning
@@ -14,7 +14,6 @@ In all case you would need to use:
 - the .pk3 map file from the map folder
 - a `setGravity` GSC command
   - this [codextended-server fork](https://github.com/raphael12333/codextended-server/tree/main) has one
-###### `                     `
 ___
 ### Some TODO
 - Automatize the zone cycle and randomize the locations
