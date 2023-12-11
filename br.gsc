@@ -42,8 +42,6 @@ main()
 //CALLBACKS
 Callback_StartGameType()
 {
-    printLn("#### Callback_StartGameType");
-
     //MENUS
     game["menu_camouflage"] = "camouflage";
 	game["menu_weapon_all"] = "weapon_bolt";
@@ -107,9 +105,7 @@ Callback_StartGameType()
 }
 Callback_PlayerConnect()
 {
-    printLn("#### Callback_PlayerConnect");
-
-	self.statusicon = "gfx/hud/hud@status_connecting.tga";
+    self.statusicon = "gfx/hud/hud@status_connecting.tga";
 	self waittill("begin");
 	self.statusicon = "";
 
@@ -122,7 +118,6 @@ Callback_PlayerConnect()
 	if(game["state"] == "intermission")
 	{
         printLn("#### Callback_PlayerConnect: game[\"state\"] == \"intermission\"");
-
 		//spawnIntermission();
 		return;
 	}
@@ -382,10 +377,6 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     if(isDefined(grenade))
         self dropItem(grenade);
     
-	self.pers["weapon1"] = undefined;
-	self.pers["weapon2"] = undefined;
-	self.pers["spawnweapon"] = undefined;
-
 	body = self cloneplayer();
 
     /*
@@ -471,11 +462,14 @@ spawnPlayer(origin, angles)
 	else
 		maps\mp\_utility::loadModel(self.pers["savedmodel"]);
 
-	loadout();
 
-	self giveWeapon(self.pers["weapon"]);
-	self giveMaxAmmo(self.pers["weapon"]);
-	self setSpawnWeapon(self.pers["weapon"]);
+    if (!isDefined(self.willLand))
+    {
+        loadout();
+        self giveWeapon(self.pers["weapon"]);
+        self giveMaxAmmo(self.pers["weapon"]);
+        self setSpawnWeapon(self.pers["weapon"]);
+    }
 	
 	self setClientCvar("cg_objectiveText", level.objectiveText);
 }
@@ -576,9 +570,7 @@ checkBattleReady()
 }
 startBattle()
 {
-    printLn("#### startBattle");
-
-	level endon("battle_cancel");
+    level endon("battle_cancel");
     
 	wait level.startBattleCountdown;
 	printLn("#### START BATTLE");
@@ -617,8 +609,10 @@ startBattle()
         if (!isDefined(player.pers["weapon"]))
             player.pers["weapon"] = "mosin_nagant_mp";
 
+        player.willLand = true;
+
         player spawnPlayer(originPlanePov, anglesPlanePov);
-        player showToPlayer(player);
+        player showToPlayer(player); //TODO: use an invisible model instead
         player closeMenu();
     }
 
@@ -636,6 +630,8 @@ startBattle()
 	{
 		player = players[i];
         player.planePov moveY(moveDistance, moveDelay);
+        player.god = true; //TODO: remove after tests
+
         player thread checkPlayerJumped();
     }
 
@@ -649,7 +645,7 @@ checkPlayerJumped()
 	for(;;)
 	{
 		if (self useButtonPressed())
-		{	
+		{
 			anglesBeforeSpawn = self getPlayerAngles();
 
             self spawnPlayer(self.planePov.origin, anglesBeforeSpawn);
@@ -660,16 +656,13 @@ checkPlayerJumped()
 			delayExitPlane = 0.20;
 			underPlaneOrigin =
 				(self.planePOV.origin[0],
-				self.planePOV.origin[1] - 500,
-				(self.planePOV.origin[2] - 700));
+				self.planePOV.origin[1] - 100,
+				(self.planePOV.origin[2] - 1000));
 			self.planePOV moveTo(underPlaneOrigin, delayExitPlane);
 			wait delayExitPlane;
 
 			self unlink();
 			self.planePOV delete();
-
-			self.god = true; //TODO: remove after tests
-
 			self thread checkPlayerDive();
 
 			break;
@@ -677,39 +670,133 @@ checkPlayerJumped()
 		wait .05;
 	}
 }
+
+
+
+
+
+
+
+
 checkPlayerDive()
 {
 	self thread checkLanded();
 
-	self setGravity(200);
+	self setGravity(300);
 
-	acceleration = 20;
-	friction = 0.975; //When not going forward/sides + not using parachute
+    friction_base = 0.975; //No ButtonPressed + not using parachute
+
+    acceleration_forward = 30;
+    acceleration_onlyLeftRight = 15;
 	
+    g_speed = getCvar("g_speed");
+    speed_base = g_speed;
+    speed_forward = speed_base;
+    speed_onlyLeftRight = speed_base;
+
 	for(;;)
 	{
 		self endon("landed");
 
-		velocity = self getvelocity();
-		angles = self getplayerangles();
+		velocity = self getVelocity();
+		angles = self getPlayerAngles();
+
 		forwardDirection = anglesToForward(angles);
-		speedScale = 1;
+        leftDirection = anglesToLeft(angles);
+        rightDirection = anglesToRight(angles);
 
-		if (self forwardButtonPressed()) //TODO: same when diving on sides
-		{
-			speedScale = 1.5;
-			velocity =
-				(velocity[0] + forwardDirection[0] * acceleration,
-                velocity[1] + forwardDirection[1] * acceleration,
-                velocity[2] + forwardDirection[2] * acceleration);
-		}
-		else
-		{
-			velocity = maps\mp\_utility::vectorScale(velocity, friction);
-		}
+        goingForward = false;
+        goingLeft = false;
+        goingRight = false;
+        if (self forwardButtonPressed())
+            goingForward = true;
+        if (self leftButtonPressed())
+            goingLeft = true;
+        if (self rightButtonPressed())
+            goingRight = true;
+        
+        if (goingLeft && goingRight)
+        {
+            //left + right pressed = neither
+            goingLeft = false;
+            goingRight = false;
+        }
+        
+        noKeyPressed = false;
+        if (goingForward)
+        {
+            //GOING FORWARD
+            if (goingLeft)
+            {
+                velocity_x = velocity[0] + (forwardDirection[0] + leftDirection[0]) * acceleration_forward;
+                velocity_y = velocity[1] + (forwardDirection[1] + leftDirection[1]) * acceleration_forward;
+                velocity_z = velocity[2] + (forwardDirection[2] + leftDirection[2]) * acceleration_forward;
+            }
+            else if (goingRight)
+            {
+                velocity_x = velocity[0] + (forwardDirection[0] + rightDirection[0]) * acceleration_forward;
+                velocity_y = velocity[1] + (forwardDirection[1] + rightDirection[1]) * acceleration_forward;
+                velocity_z = velocity[2] + (forwardDirection[2] + rightDirection[2]) * acceleration_forward;
+            }
+            else
+            {
+                //JUST FORWARD
+                velocity_x = velocity[0] + forwardDirection[0] * acceleration_forward;
+                velocity_y = velocity[1] + forwardDirection[1] * acceleration_forward;
+                velocity_z = velocity[2] + forwardDirection[2] * acceleration_forward;
+            }
+        }
+        else
+        {
+            //NOT GOING FORWARD
+            if (goingLeft)
+            {
+                velocity_x = velocity[0] + leftDirection[0] * acceleration_onlyLeftRight;
+                velocity_y = velocity[1] + leftDirection[1] * acceleration_onlyLeftRight;
+                velocity_z = velocity[2] + leftDirection[2] * acceleration_onlyLeftRight;
+            }
+            else if (goingRight)
+            {
+                velocity_x = velocity[0] + rightDirection[0] * acceleration_onlyLeftRight;
+                velocity_y = velocity[1] + rightDirection[1] * acceleration_onlyLeftRight;
+                velocity_z = velocity[2] + rightDirection[2] * acceleration_onlyLeftRight;
+            }
+            else
+            {
+                //NO KEY PRESSED
+                noKeyPressed = true;
+            }
+        }
 
-		self setMoveSpeedScale(speedScale);
-		self setVelocity(velocity);
+
+
+
+        /*
+        if (noKeyPressed)
+        {
+            speed = speed_base;
+            velocity = maps\mp\_utility::vectorScale(velocity, friction_base);
+        }*/
+        if (!noKeyPressed)
+        {
+            if (goingForward)
+            {
+                speed = speed_forward;
+            }
+            else
+            {
+                speed = speed_onlyLeftRight;
+            }
+            velocity = (velocity_x, velocity_y, velocity_z);
+
+            self setSpeed(speed);
+		    self setVelocity(velocity);
+        }
+
+
+
+
+        
 		wait .05;
 	}
 }
@@ -721,12 +808,18 @@ checkLanded()
 		{
 			self notify("landed");
 
-			self setMoveSpeedScale(1);
+            self.willLand = false;
 
-			g_gravity = getCvar("g_gravity");
+            g_gravity = getCvar("g_gravity");
+            g_speed = getCvar("g_speed");
 			self setGravity(g_gravity);
-			
+			self setSpeed(g_speed);
 			//self setClientCvar("cg_thirdPerson", "0");
+
+            loadout();
+            self giveWeapon(self.pers["weapon"]);
+            self giveMaxAmmo(self.pers["weapon"]);
+            self switchToWeapon(self.pers["weapon"]);
 
 			break;
 		}
@@ -1581,6 +1674,13 @@ doQuickMessage(soundalias, saytext)
 //VSAY END
 
 //UTILS
+model()
+{
+	self detachAll();
+	[[game[self.pers["camouflage"] + "_model"] ]]();
+	self.pers["savedmodel"] = maps\mp\_utility::saveModel();
+}
+
 isBoltWeapon(sWeapon)
 {
     switch(sWeapon)
@@ -1606,14 +1706,6 @@ isSecondaryWeapon(sWeapon)
     return false;
 }
 
-model()
-{
-	self detachAll();
-	
-	[[game[self.pers["camouflage"] + "_model"] ]]();
-
-	self.pers["savedmodel"] = maps\mp\_utility::saveModel();
-}
 loadout()
 {
 	switch(self.pers["camouflage"])
@@ -1646,5 +1738,13 @@ loadout()
         self giveMaxAmmo("stielhandgranate_mp");
         break;
     }
+}
+
+anglesToLeft(angles)
+{
+    rightVector = anglesToRight(angles);
+    // Invert the right vector
+    leftVector = maps\mp\_utility::vectorScale(rightVector, -1);
+    return leftVector;
 }
 //UTILS END
