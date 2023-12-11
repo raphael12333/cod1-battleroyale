@@ -12,8 +12,8 @@ To try it you would need to put *___customizations.pk3* in the server main folde
 ###### `                     `
 In all case you would need to use:
 - the .pk3 map file from the map folder
-- a `setGravity` GSC command
-  - this [codextended-server fork](https://github.com/raphael12333/codextended-server/tree/main) has one
+- a `setGravity` and a `setSpeed`GSC command
+  - this [codextended-server fork](https://github.com/raphael12333/codextended-server/tree/main) has them
 ___
 ### Some TODO
 - Automatize the zone cycle and randomize the locations
