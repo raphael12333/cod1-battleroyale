@@ -6,10 +6,10 @@ I started by doing tests using *br_tests.gsc* on a dm, it uses custom MiscMod co
 - setup [MiscMod](https://cod.pm/guide/d0da8d/installing-and-configuring-codam-miscmod)
 - read the comments at the beginning
 - put *___fx.pk3* in the server main folder, this file must be downloaded by the client.
-###### `                     `
+###### `          `
 Now I started to create a mod independent gametype file: *br.gsc*  
 To try it you would need to put *___customizations.pk3* in the server main folder, this file must be downloaded by the client.
-###### `                     `
+###### `          `
 In all case you would need to use:
 - the .pk3 map file from the map folder
 - a `setGravity` and a `setSpeed`GSC command
