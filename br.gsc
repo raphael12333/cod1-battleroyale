@@ -12,9 +12,10 @@ main()
 
     level.maxClients = getCvarInt("sv_maxclients");
 	level.minPlayers = 2;
-	level.startBattleCountdown = 5;
+	level.startBattleCountdown = 2;
     level.quickChatDelay = 0.8;
     level.planeModel = "xmodel/c47";
+    level.parachuteModel = "xmodel/bx_parachute";
 
     level.camouflages = [];
     level.camouflages[0] = "american";
@@ -42,14 +43,24 @@ main()
 //CALLBACKS
 Callback_StartGameType()
 {
+    //View Map menu
+    if(!isdefined(game["layoutimage"]))
+		game["layoutimage"] = "default";
+	layoutname = "levelshots/layouts/hud@layout_" + game["layoutimage"];
+	precacheShader(layoutname);
+	setcvar("scr_layoutimage", layoutname);
+	makeCvarServerInfo("scr_layoutimage", "");
+
     //MENUS
     game["menu_camouflage"] = "camouflage";
 	game["menu_weapon_all"] = "weapon_bolt";
+    game["menu_viewmap"] = "viewmap";
     game["menu_quickcommands"] = "quickcommands";
 	game["menu_quickstatements"] = "quickstatements";
 	game["menu_quickresponses"] = "quickresponses";
 	precacheMenu(game["menu_camouflage"]);
 	precacheMenu(game["menu_weapon_all"]);
+    precacheMenu(game["menu_viewmap"]);
 	precacheMenu(game["menu_quickcommands"]);
 	precacheMenu(game["menu_quickstatements"]);
 	precacheMenu(game["menu_quickresponses"]);
@@ -60,14 +71,12 @@ Callback_StartGameType()
 	precacheShader("gfx/hud/hud@mpflag_spectator.tga");
 	precacheStatusIcon("gfx/hud/hud@status_dead.tga");
 	precacheStatusIcon("gfx/hud/hud@status_connecting.tga");
-	precacheItem("item_health");
-
-    precacheHeadIcon("gfx/hud/headicon@quickmessage");
 
     precacheShader("gfx/hud/damage_feedback.dds");
 
-    //PLANE
+    //MODELS
     precacheModel(level.planeModel);
+    precacheModel(level.parachuteModel);
 
     //PLAYER MODELS
     mptype\american_airborne::precache();
@@ -111,9 +120,6 @@ Callback_PlayerConnect()
 
     self.pers["connected"] = true;
 	iprintln(&"MPSCRIPT_CONNECTED", self);
-
-	lpselfnum = self getEntityNumber();
-	logPrint("J;" + lpselfnum + ";" + self.name + "\n");
 	
 	if(game["state"] == "intermission")
 	{
@@ -195,6 +201,10 @@ Callback_PlayerConnect()
 			case "weapon":
                 self openMenu(game["menu_weapon_all"]);
 				break;
+
+            case "viewmap":
+				self openMenu(game["menu_viewmap"]);
+				break;
 			}
 		}
 		else if(menu == game["menu_weapon_all"])
@@ -202,6 +212,11 @@ Callback_PlayerConnect()
 			if(response == "camouflage")
 			{
 				self openMenu(game["menu_camouflage"]);
+				continue;
+			}
+            else if(response == "viewmap")
+			{
+				self openMenu(game["menu_viewmap"]);
 				continue;
 			}
 
@@ -219,6 +234,19 @@ Callback_PlayerConnect()
 				spawnPlayer();
 			}
 		}
+        else if(menu == game["menu_viewmap"])
+		{
+			switch(response)
+			{
+			case "team":
+				self openMenu(game["menu_camouflage"]);
+				continue;
+
+			case "weapon":
+				self openMenu(game["menu_weapon_all"]);
+				break;
+			}
+		}
 		else if(menu == game["menu_quickcommands"])
 			quickcommands(response);
 		else if(menu == game["menu_quickstatements"])
@@ -230,13 +258,10 @@ Callback_PlayerConnect()
 Callback_PlayerDisconnect()
 {
 	iprintln(&"MPSCRIPT_DISCONNECTED", self);
-
-	lpselfnum = self getEntityNumber();
-	logPrint("Q;" + lpselfnum + ";" + self.name + "\n");
 }
 Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc)
 {
-    if ((self.sessionteam == "spectator") || (self.god == true))
+    if(self.sessionteam == "spectator")
 		return;
 
 	// Don't do knockback if the damage direction was not specified
@@ -246,13 +271,6 @@ Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sW
 	// Make sure at least one point of damage is done
 	if(iDamage < 1)
 		iDamage = 1;
-
-	// Do debug print if it's enabled
-	if(getCvarInt("g_debugDamage"))
-	{
-		println("client:" + self getEntityNumber() + " health:" + self.health +
-			" damage:" + iDamage + " hitLoc:" + sHitLoc);
-	}
 
     if(isDefined(eAttacker) && isPlayer(eAttacker) && isAlive(eAttacker))
     {
@@ -279,29 +297,6 @@ Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sW
     }
 	// Apply the damage to the player
 	self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc);
-
-	if(self.sessionstate != "dead")
-	{
-		lpselfnum = self getEntityNumber();
-		lpselfname = self.name;
-		lpselfteam = self.pers["team"];
-		lpattackerteam = "";
-
-		if(isPlayer(eAttacker))
-		{
-			lpattacknum = eAttacker getEntityNumber();
-			lpattackname = eAttacker.name;
-			lpattackerteam = eAttacker.pers["team"];
-		}
-		else
-		{
-			lpattacknum = -1;
-			lpattackname = "";
-			lpattackerteam = "world";
-		}
-
-		logPrint("D;" + lpselfnum + ";" + lpselfteam + ";" + lpselfname + ";" + lpattacknum + ";" + lpattackerteam + ";" + lpattackname + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n");
-	}
 }
 Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc)
 {
@@ -319,14 +314,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 
 	self.sessionstate = "dead";
 	self.statusicon = "gfx/hud/hud@status_dead.tga";
-	self.headicon = "";
-	self.pers["deaths"]++;
-	self.deaths = self.pers["deaths"];
-
-	lpselfnum = self getEntityNumber();
-	lpselfname = self.name;
-	lpselfteam = self.pers["team"];
-	lpattackerteam = "";
+	self.deaths = 1;
 
 	attackerNum = -1;
 	level.playercam = attacker getEntityNumber();
@@ -360,8 +348,6 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 		lpattackname = "";
 		lpattackerteam = "world";
 	}
-
-	logPrint("K;" + lpselfnum + ";" + lpselfteam + ";" + lpselfname + ";" + lpattacknum + ";" + lpattackerteam + ";" + lpattackname + ";" + sWeapon + ";" + iDamage + ";" + sMeansOfDeath + ";" + sHitLoc + "\n");
 
 	// Make the player drop his weapons
     primary = self getWeaponSlotWeapon("primary");
@@ -457,6 +443,9 @@ spawnPlayer(origin, angles)
 	self.maxhealth = 100;
 	self.health = self.maxhealth;
 
+    self.pers["score"] = 0;
+	self.score = self.pers["score"];
+
     if(!isdefined(self.pers["savedmodel"]))
 		model();
 	else
@@ -480,87 +469,98 @@ checkBattleReady()
 
     level endon("battle_start");
 
-	colorYellow = (1, 1, 0);
-	color_battleStarting = (1, 0, 0);
-	fontScale_battleStarting = 1.8;
-	fontScale_playerCount = 1.1;
+	color_yellow = (1, 1, 0);
+	color_red = (1, 0, 0);
+	fontScale_playerCount = 1.5;
+
+    level.hud_waitingBackground = newHudElem();
+    level.hud_waitingBackground.alignX = "center";
+	level.hud_waitingBackground.x = 320;
+	level.hud_waitingBackground.y = 20;
+    level.hud_waitingBackground.alpha = 0.65;
+    level.hud_waitingBackground.sort = -1;
+    level.hud_waitingBackground setShader("black", 390, 75);
 
 	level.hud_waitingForPlayers = newHudElem();
 	level.hud_waitingForPlayers.alignX = "center";
+    level.hud_waitingForPlayers.alignY = "middle";
 	level.hud_waitingForPlayers.x = 320;
-	level.hud_waitingForPlayers.y = 90;
-	level.hud_waitingForPlayers.color = colorYellow;
+	level.hud_waitingForPlayers.y = level.hud_waitingBackground.y + 22;
+	level.hud_waitingForPlayers.color = color_yellow;
 	level.hud_waitingForPlayers.fontScale = 1.5;
+    level.hud_waitingForPlayers.font = "bigfixed";
 
-	level.hud_playersConnecting = newHudElem();
-	level.hud_playersConnecting.x = 480;
-	level.hud_playersConnecting.y = 240;
-	level.hud_playersConnecting.color = colorYellow;
-	level.hud_playersConnecting.fontScale = fontScale_playerCount;
-	level.hud_playersConnecting.label = &"Players connecting: ";
+    distance_ready_min = 17;
 
-	level.hud_playersConnected = newHudElem();
-	level.hud_playersConnected.x = level.hud_playersConnecting.x;
-	level.hud_playersConnected.y = level.hud_playersConnecting.y + 20;
-	level.hud_playersConnected.color = colorYellow;
-	level.hud_playersConnected.fontScale = fontScale_playerCount;
-	level.hud_playersConnected.label = &"Players connected: ";
+    level.hud_playersReady = newHudElem();
+    level.hud_playersReady.alignX = "center";
+    level.hud_playersReady.alignY = "middle";
+	level.hud_playersReady.x = level.hud_waitingForPlayers.x - distance_ready_min;
+	level.hud_playersReady.y = level.hud_waitingForPlayers.y + 30;
+	level.hud_playersReady.color = color_yellow;
+	level.hud_playersReady.fontScale = fontScale_playerCount;
+    level.hud_playersReady.font = "bigfixed";
+    
+    level.hud_playersMin = newHudElem();
+    level.hud_playersMin.alignX = "center";
+    level.hud_playersMin.alignY = "middle";
+	level.hud_playersMin.x = level.hud_waitingForPlayers.x + distance_ready_min;
+	level.hud_playersMin.y = level.hud_playersReady.y;
+	level.hud_playersMin.color = color_yellow;
+	level.hud_playersMin.fontScale = fontScale_playerCount;
+    level.hud_playersMin.font = "bigfixed";
+    level.hud_playersMin.label = &"/";
+    level.hud_playersMin setValue(level.minPlayers);
 
 	for(;;)
 	{
-        numberOfConnectingPlayers = [];
-		numberOfConnectedPlayers = [];
+        numberOfConnectedPlayers = [];
 		for(i = 0; i < level.maxClients; i++)
 		{
 			player = getEntByNum(i);
 			if(isDefined(player))
 			{
-				if(!isDefined(player.pers["connected"]))
-				{
-					//PLAYER IS CONNECTING
-					numberOfConnectingPlayers[numberOfConnectingPlayers.size] = player;
-				}
-				else
+				if(isDefined(player.pers["connected"]))
 				{
 					//PLAYER IS CONNECTED
 					numberOfConnectedPlayers[numberOfConnectedPlayers.size] = player;
 				}
 			}
 		}
-        level.hud_playersConnecting setValue(numberOfConnectingPlayers.size);
-        level.hud_playersConnected setValue(numberOfConnectedPlayers.size);
+        level.hud_playersReady setValue(numberOfConnectedPlayers.size);
 
 		if(numberOfConnectedPlayers.size > 0) //AT LEAST 1 READY PLAYER
 		{
 			if(numberOfConnectedPlayers.size < level.minPlayers) //MIN PLAYERS NOT REACHED YET
 			{
-				if(isDefined(level.hud_startingBattle))
+				if(isDefined(level.startingBattle)) //Lost required players count, reset
 				{
-					level.hud_startingBattle destroy();
-					level notify("battle_cancel");
+                    level notify("battle_cancel");
+                    level.startingBattle = undefined;
+
+                    level.hud_waitingForPlayers destroy();
+
+                    //Recreate hud because can't clear timer
+                    level.hud_waitingForPlayers = newHudElem();
+                    level.hud_waitingForPlayers.alignX = "center";
+                    level.hud_waitingForPlayers.alignY = "middle";
+                    level.hud_waitingForPlayers.x = 320;
+                    level.hud_waitingForPlayers.y = 40;
+                    level.hud_waitingForPlayers.color = color_yellow;
+                    level.hud_waitingForPlayers.fontScale = 1.5;
+                    level.hud_waitingForPlayers.font = "bigfixed";
 				}
-                level.hud_waitingForPlayers setText(&"Waiting for players");
+                level.hud_waitingForPlayers setText(&"WAITING FOR PLAYERS");
 			}
 			else if(numberOfConnectedPlayers.size >= level.minPlayers) //MIN PLAYERS REACHED, START COUNTDOWN
 			{
-				if (numberOfConnectedPlayers.size < level.maxClients)
+				if (numberOfConnectedPlayers.size <= level.maxClients && !isDefined(level.startingBattle))
 				{
-					level.hud_waitingForPlayers setText(&"Accepting more players");
-				}
-				else
-				{
-					level.hud_waitingForPlayers setText(&"Server is full");
-				}
-				if (!isDefined(level.hud_startingBattle))
-				{
-					level.hud_startingBattle = newHudElem();
-					level.hud_startingBattle.x = 50;
-					level.hud_startingBattle.y = level.hud_waitingForPlayers.y + 70;
-					level.hud_startingBattle.color = color_battleStarting;
-					level.hud_startingBattle.fontScale = fontScale_battleStarting;
-					level.hud_startingBattle.label = &"Battle starting ";
-					level.hud_startingBattle setTimer(level.startBattleCountdown);
-					thread startBattle();
+					level.hud_waitingForPlayers setText(&"");
+                    level.hud_waitingForPlayers.color = color_red;
+                    level.hud_waitingForPlayers.label = &"BATTLE STARTING ";
+					level.hud_waitingForPlayers setTimer(level.startBattleCountdown);
+                    thread startBattle();
 				}
 			}
 		}
@@ -571,16 +571,16 @@ checkBattleReady()
 startBattle()
 {
     level endon("battle_cancel");
-    
+    level.startingBattle = true;
 	wait level.startBattleCountdown;
-	printLn("#### START BATTLE");
-
     level notify("battle_start");
+
+    level.startingBattle = undefined;
     
+    level.hud_waitingBackground destroy();
     level.hud_waitingForPlayers destroy();
-    level.hud_playersConnecting destroy();
-    level.hud_playersConnected destroy();
-    level.hud_startingBattle destroy();
+    level.hud_playersReady destroy();
+    level.hud_playersMin destroy();
 
     //using map zh_frenzy
 	originPlane = (2050, -14350, 8070);
@@ -598,71 +598,84 @@ startBattle()
 		level.plane.angles[1],
 		level.plane.angles[2]);
 
+    moveDistance = 30000;
+	moveDelay = 22;
+    level.planePov = spawn("script_origin", originPlanePov);
+
     //MAKE PLAYERS TO FOLLOW THE PLANE
     players = getentarray("player", "classname");
 	for(i = 0; i < players.size; i++)
 	{
 		player = players[i];
 
+        player.willLand = true;
+        player closeMenu();
+
         if (!isDefined(player.pers["camouflage"]))
             player.pers["camouflage"] = level.camouflages[randomInt(level.camouflages.size)];
         if (!isDefined(player.pers["weapon"]))
             player.pers["weapon"] = "mosin_nagant_mp";
 
-        player.willLand = true;
-
         player spawnPlayer(originPlanePov, anglesPlanePov);
         player showToPlayer(player); //TODO: use an invisible model instead
-        player closeMenu();
-    }
-
-    moveDistance = 30000;
-	moveDelay = 22;
-
-	for(i = 0; i < players.size; i++)
-	{
-		player = players[i];
-        player.planePov = spawn("script_origin", originPlanePov);
-        player linkto(player.planePov);
+        player linkto(level.planePov);
+        player thread checkPlayerJumped();
     }
     level.plane moveY(moveDistance, moveDelay);
+    level.planePov moveY(moveDistance, moveDelay);
+
+    wait moveDelay;
+    
     for(i = 0; i < players.size; i++)
 	{
 		player = players[i];
-        player.planePov moveY(moveDistance, moveDelay);
-        player.god = true; //TODO: remove after tests
-
-        player thread checkPlayerJumped();
+        if (isAlive(player) && !isDefined(player.jumped))
+        {
+            player.forceJump = true;
+        }
     }
 
-    wait moveDelay;
-	level.plane delete();
+    wait .05;
+    level.plane delete();
+    level.planePov delete();
 }
 
 //SKYDIVE FUNCTIONS
 checkPlayerJumped()
 {
+    self.hud_jump_parachute = newClientHudElem(self);
+    self.hud_jump_parachute.alignX = "center";
+    self.hud_jump_parachute.alignY = "middle";
+    self.hud_jump_parachute.x = 320;
+	self.hud_jump_parachute.y = 40;
+	self.hud_jump_parachute.fontScale = 1.2;
+	self.hud_jump_parachute setText(&"^3Press ^1[{+activate}] ^3to jump");
+
 	for(;;)
 	{
-		if (self useButtonPressed())
+		if (self useButtonPressed() || isDefined(self.forceJump))
 		{
-			anglesBeforeSpawn = self getPlayerAngles();
+            self.jumped = true;
+            self.hud_jump_parachute setText(&"");
 
-            self spawnPlayer(self.planePov.origin, anglesBeforeSpawn);
+			anglesBeforeSpawn = self getPlayerAngles();
+            self spawnPlayer(level.planePov.origin, anglesBeforeSpawn);
             self showToPlayer(undefined);
 			//self setClientCvar("cg_thirdPerson", "1"); //TODO: remove after tests
-			self linkto(self.planePov);
 
-			delayExitPlane = 0.20;
+			delayExitPlane = 0.35;
 			underPlaneOrigin =
-				(self.planePOV.origin[0],
-				self.planePOV.origin[1] - 100,
-				(self.planePOV.origin[2] - 1000));
-			self.planePOV moveTo(underPlaneOrigin, delayExitPlane);
+				(level.planePov.origin[0],
+				level.planePov.origin[1] - 100,
+				(level.planePov.origin[2] - 1000));
+
+            self.jumpPov = spawn("script_origin", level.planePov.origin);
+            self linkto(self.jumpPov);
+			self.jumpPov moveTo(underPlaneOrigin, delayExitPlane);
 			wait delayExitPlane;
 
 			self unlink();
-			self.planePOV delete();
+			self.jumpPov delete();
 			self thread checkPlayerDive();
 
 			break;
@@ -670,132 +683,283 @@ checkPlayerJumped()
 		wait .05;
 	}
 }
-
-
-
-
-
-
-
-
+checkReleasedUseButton()
+{
+    self endon("disconnect");
+    self endon("landed");
+    while(self useButtonPressed())
+    {
+        wait .05;
+    }
+    self.blockParachuteCheck = false;
+}
 checkPlayerDive()
 {
-	self thread checkLanded();
+    self thread checkLanded();
 
-	self setGravity(300);
+    self.hud_jump_parachute setText(&"^3Press ^1[{+activate}] ^3to open/close parachute");
 
-    friction_base = 0.975; //No ButtonPressed + not using parachute
+    self.parachuteEnabled = false;
+    self.hudParachute_indicatorTest = newClientHudElem(self); //TODO: remove after tests
+    self.hudParachute_indicatorTest.x = 70;
+    self.hudParachute_indicatorTest.y = 200;
+    self.hudParachute_indicatorTest.fontScale = 1.3;
+    self.hudParachute_indicatorTest setText(&"^1PARACHUTE CLOSED");
 
-    acceleration_forward = 30;
-    acceleration_onlyLeftRight = 15;
-	
-    g_speed = getCvar("g_speed");
-    speed_base = g_speed;
-    speed_forward = speed_base;
-    speed_onlyLeftRight = speed_base;
+    self.blockParachuteCheck = false;
 
+    //PHYSICS VARIABLES
+    //Acceleration multiplier (diagonal fall)
+    acceleration_skydive_forward = 50;
+    acceleration_skydive_onlyLeftRight = 35;
+    acceleration_skydive_forwardLeftRight = 45;
+
+    acceleration_parachute_forward = 70;
+    acceleration_parachute_onlyLeftRight = 50;
+    acceleration_parachute_forwardLeftRight = 60;
+
+    acceleration_parachute_backward = 45;
+    acceleration_parachute_backwardLeftRight = 30;
+
+    //Air resistance multiplier (fall slowdown)
+    airResistance_skydive_idle = 0.975;
+    airResistance_skydive_forward = 0.995;
+    airResistance_parachute_idle = 0.85;
+    airResistance_parachute_forward = 0.96;
+
+    //CHECK MOVEMENTS
 	for(;;)
 	{
 		self endon("landed");
 
-		velocity = self getVelocity();
-		angles = self getPlayerAngles();
-
-		forwardDirection = anglesToForward(angles);
-        leftDirection = anglesToLeft(angles);
-        rightDirection = anglesToRight(angles);
-
+        //DIRECTION KEYS CHECK
         goingForward = false;
+        goingBackward = false;
         goingLeft = false;
         goingRight = false;
         if (self forwardButtonPressed())
             goingForward = true;
+        if (self backButtonPressed())
+            goingBackward = true;
         if (self leftButtonPressed())
             goingLeft = true;
         if (self rightButtonPressed())
             goingRight = true;
-        
+
         if (goingLeft && goingRight)
         {
-            //left + right pressed = neither
+            //left + right = neither
             goingLeft = false;
             goingRight = false;
         }
+        if (goingForward && goingBackward)
+        {
+            //forward + backward = neither
+            goingForward = false;
+            goingBackward = false;
+        }
+
+        //PARACHUTE STATE CHECK
+        checkParachute = false;
+        if (self useButtonPressed() && !self.blockParachuteCheck)
+        {
+            self.blockParachuteCheck = true;
+            self thread checkReleasedUseButton();
+            checkParachute = true;
+        }
+        if (checkParachute)
+        {
+            if (!self.parachuteEnabled)
+            {
+                //OPEN
+                self.hudParachute_indicatorTest setText(&"^2PARACHUTE OPENED"); //TODO: remove after tests
+                self.parachuteEnabled = true;
+                self attach(level.parachuteModel, "tag_belt_back");
+            }
+            else
+            {
+                //CLOSE
+                self.hudParachute_indicatorTest setText(&"^1PARACHUTE CLOSED");
+                self.parachuteEnabled = false;
+                self detach(level.parachuteModel, "tag_belt_back");
+            }
+        }
         
-        noKeyPressed = false;
-        if (goingForward)
+        velocity = self getVelocity();
+        angles = self getPlayerAngles();
+		forwardDirection = anglesToForward(angles);
+        backwardDirection = anglesToBackward(angles);
+        leftDirection = anglesToLeft(angles);
+        rightDirection = anglesToRight(angles);
+
+        //printLn("### angles[0] = " + angles[0]);
+        isLookingUp = false;
+        isLookingDown = false;
+        if (angles[0] < -30)
         {
-            //GOING FORWARD
-            if (goingLeft)
-            {
-                velocity_x = velocity[0] + (forwardDirection[0] + leftDirection[0]) * acceleration_forward;
-                velocity_y = velocity[1] + (forwardDirection[1] + leftDirection[1]) * acceleration_forward;
-                velocity_z = velocity[2] + (forwardDirection[2] + leftDirection[2]) * acceleration_forward;
-            }
-            else if (goingRight)
-            {
-                velocity_x = velocity[0] + (forwardDirection[0] + rightDirection[0]) * acceleration_forward;
-                velocity_y = velocity[1] + (forwardDirection[1] + rightDirection[1]) * acceleration_forward;
-                velocity_z = velocity[2] + (forwardDirection[2] + rightDirection[2]) * acceleration_forward;
-            }
-            else
-            {
-                //JUST FORWARD
-                velocity_x = velocity[0] + forwardDirection[0] * acceleration_forward;
-                velocity_y = velocity[1] + forwardDirection[1] * acceleration_forward;
-                velocity_z = velocity[2] + forwardDirection[2] * acceleration_forward;
-            }
+            isLookingUp = true;
         }
-        else
+        else if (angles[0] > 30)
         {
-            //NOT GOING FORWARD
-            if (goingLeft)
-            {
-                velocity_x = velocity[0] + leftDirection[0] * acceleration_onlyLeftRight;
-                velocity_y = velocity[1] + leftDirection[1] * acceleration_onlyLeftRight;
-                velocity_z = velocity[2] + leftDirection[2] * acceleration_onlyLeftRight;
-            }
-            else if (goingRight)
-            {
-                velocity_x = velocity[0] + rightDirection[0] * acceleration_onlyLeftRight;
-                velocity_y = velocity[1] + rightDirection[1] * acceleration_onlyLeftRight;
-                velocity_z = velocity[2] + rightDirection[2] * acceleration_onlyLeftRight;
-            }
-            else
-            {
-                //NO KEY PRESSED
-                noKeyPressed = true;
-            }
+            isLookingDown = true;
         }
-
-
-
-
-        /*
-        if (noKeyPressed)
-        {
-            speed = speed_base;
-            velocity = maps\mp\_utility::vectorScale(velocity, friction_base);
-        }*/
-        if (!noKeyPressed)
+        
+        //APPLY MOTION EFFECTS
+        if (self.parachuteEnabled)
         {
             if (goingForward)
             {
-                speed = speed_forward;
+                if (isLookingUp) //Prevent acceleration from pushing upward
+                {
+                    //AS IDLE
+                    newVelocity_x = velocity[0];
+                    newVelocity_y = velocity[1];
+                    newVelocity_z = velocity[2];
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_idle);
+                }
+                else if (goingLeft)
+                {
+                    newVelocity_x = velocity[0] + (forwardDirection[0] + leftDirection[0]) * acceleration_parachute_forwardLeftRight;
+                    newVelocity_y = velocity[1] + (forwardDirection[1] + leftDirection[1]) * acceleration_parachute_forwardLeftRight;
+                    newVelocity_z = velocity[2] + (forwardDirection[2] + leftDirection[2]) * acceleration_parachute_forwardLeftRight;
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
+                }
+                else if (goingRight)
+                {
+                    newVelocity_x = velocity[0] + (forwardDirection[0] + rightDirection[0]) * acceleration_parachute_forwardLeftRight;
+                    newVelocity_y = velocity[1] + (forwardDirection[1] + rightDirection[1]) * acceleration_parachute_forwardLeftRight;
+                    newVelocity_z = velocity[2] + (forwardDirection[2] + rightDirection[2]) * acceleration_parachute_forwardLeftRight;
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
+                }
+                else
+                {
+                    //JUST FORWARD
+                    newVelocity_x = velocity[0] + forwardDirection[0] * acceleration_parachute_forward;
+                    newVelocity_y = velocity[1] + forwardDirection[1] * acceleration_parachute_forward;
+                    newVelocity_z = velocity[2] + forwardDirection[2] * acceleration_parachute_forward;
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
+                }
+            }
+            else if (goingBackward)
+            {
+                if (isLookingDown) //Prevent acceleration from pushing upward
+                {
+                    //AS IDLE
+                    newVelocity_x = velocity[0];
+                    newVelocity_y = velocity[1];
+                    newVelocity_z = velocity[2];
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_idle);
+                }
+                else if (goingLeft)
+                {
+                    newVelocity_x = velocity[0] + (backwardDirection[0] + leftDirection[0]) * acceleration_parachute_backwardLeftRight;
+                    newVelocity_y = velocity[1] + (backwardDirection[1] + leftDirection[1]) * acceleration_parachute_backwardLeftRight;
+                    newVelocity_z = velocity[2] + (backwardDirection[2] + leftDirection[2]) * acceleration_parachute_backwardLeftRight;
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
+                }
+                else if (goingRight)
+                {
+                    newVelocity_x = velocity[0] + (backwardDirection[0] + rightDirection[0]) * acceleration_parachute_backwardLeftRight;
+                    newVelocity_y = velocity[1] + (backwardDirection[1] + rightDirection[1]) * acceleration_parachute_backwardLeftRight;
+                    newVelocity_z = velocity[2] + (backwardDirection[2] + rightDirection[2]) * acceleration_parachute_backwardLeftRight;
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
+                }
+                else
+                {
+                    //JUST BACKWARD
+                    newVelocity_x = velocity[0] + backwardDirection[0] * acceleration_parachute_backward;
+                    newVelocity_y = velocity[1] + backwardDirection[1] * acceleration_parachute_backward;
+                    newVelocity_z = velocity[2] + backwardDirection[2] * acceleration_parachute_backward;
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
+                }
+            }
+            else if (goingLeft)
+            {
+                //JUST LEFT
+                newVelocity_x = velocity[0] + leftDirection[0] * acceleration_parachute_onlyLeftRight;
+                newVelocity_y = velocity[1] + leftDirection[1] * acceleration_parachute_onlyLeftRight;
+                newVelocity_z = velocity[2] + leftDirection[2] * acceleration_parachute_onlyLeftRight;
+                newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
+            }
+            else if (goingRight)
+            {
+                //JUST RIGHT
+                newVelocity_x = velocity[0] + rightDirection[0] * acceleration_parachute_onlyLeftRight;
+                newVelocity_y = velocity[1] + rightDirection[1] * acceleration_parachute_onlyLeftRight;
+                newVelocity_z = velocity[2] + rightDirection[2] * acceleration_parachute_onlyLeftRight;
+                newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
             }
             else
             {
-                speed = speed_onlyLeftRight;
+                //IDLE
+                newVelocity_x = velocity[0];
+                newVelocity_y = velocity[1];
+                newVelocity_z = velocity[2];
+                newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_idle);
             }
-            velocity = (velocity_x, velocity_y, velocity_z);
-
-            self setSpeed(speed);
-		    self setVelocity(velocity);
         }
-
-
-
-
+        else //PARACHUTE DISABLED
+        {
+            if (goingForward)
+            {
+                if (isLookingUp) //Prevent acceleration from pushing upward
+                {
+                    //AS IDLE
+                    newVelocity_x = velocity[0];
+                    newVelocity_y = velocity[1];
+                    newVelocity_z = velocity[2];
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_idle);
+                }
+                else if (goingLeft)
+                {
+                    newVelocity_x = velocity[0] + (forwardDirection[0] + leftDirection[0]) * acceleration_skydive_forwardLeftRight;
+                    newVelocity_y = velocity[1] + (forwardDirection[1] + leftDirection[1]) * acceleration_skydive_forwardLeftRight;
+                    newVelocity_z = velocity[2] + (forwardDirection[2] + leftDirection[2]) * acceleration_skydive_forwardLeftRight;
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_forward);
+                }
+                else if (goingRight)
+                {
+                    newVelocity_x = velocity[0] + (forwardDirection[0] + rightDirection[0]) * acceleration_skydive_forwardLeftRight;
+                    newVelocity_y = velocity[1] + (forwardDirection[1] + rightDirection[1]) * acceleration_skydive_forwardLeftRight;
+                    newVelocity_z = velocity[2] + (forwardDirection[2] + rightDirection[2]) * acceleration_skydive_forwardLeftRight;
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_forward);
+                }
+                else
+                {
+                    //JUST FORWARD
+                    newVelocity_x = velocity[0] + forwardDirection[0] * acceleration_skydive_forward;
+                    newVelocity_y = velocity[1] + forwardDirection[1] * acceleration_skydive_forward;
+                    newVelocity_z = velocity[2] + forwardDirection[2] * acceleration_skydive_forward;
+                    newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_forward);
+                }
+            }
+            else if (goingLeft)
+            {
+                //JUST LEFT
+                newVelocity_x = velocity[0] + leftDirection[0] * acceleration_skydive_onlyLeftRight;
+                newVelocity_y = velocity[1] + leftDirection[1] * acceleration_skydive_onlyLeftRight;
+                newVelocity_z = velocity[2] + leftDirection[2] * acceleration_skydive_onlyLeftRight;
+                newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_forward);
+            }
+            else if (goingRight)
+            {
+                //JUST RIGHT
+                newVelocity_x = velocity[0] + rightDirection[0] * acceleration_skydive_onlyLeftRight;
+                newVelocity_y = velocity[1] + rightDirection[1] * acceleration_skydive_onlyLeftRight;
+                newVelocity_z = velocity[2] + rightDirection[2] * acceleration_skydive_onlyLeftRight;
+                newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_forward);
+            }
+            else
+            {
+                //IDLE
+                newVelocity_x = velocity[0];
+                newVelocity_y = velocity[1];
+                newVelocity_z = velocity[2];
+                newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_idle);
+            }
+        }
+        
+        self setVelocity(newVelocity);
         
 		wait .05;
 	}
@@ -807,15 +971,19 @@ checkLanded()
 		if (self isOnGround())
 		{
 			self notify("landed");
-
             self.willLand = false;
 
-            g_gravity = getCvar("g_gravity");
-            g_speed = getCvar("g_speed");
-			self setGravity(g_gravity);
-			self setSpeed(g_speed);
-			//self setClientCvar("cg_thirdPerson", "0");
+            self.hud_jump_parachute destroy();
+            self.hudParachute_indicatorTest destroy();
 
+            if (self.parachuteEnabled)
+            {
+                self detach(level.parachuteModel, "tag_belt_back");
+                self.parachuteEnabled = false;
+            }
+            //self setClientCvar("cg_thirdPerson", "0");
+            
+            wait .5;
             loadout();
             self giveWeapon(self.pers["weapon"]);
             self giveMaxAmmo(self.pers["weapon"]);
@@ -1705,7 +1873,6 @@ isSecondaryWeapon(sWeapon)
     }
     return false;
 }
-
 loadout()
 {
 	switch(self.pers["camouflage"])
@@ -1742,9 +1909,14 @@ loadout()
 
 anglesToLeft(angles)
 {
-    rightVector = anglesToRight(angles);
-    // Invert the right vector
-    leftVector = maps\mp\_utility::vectorScale(rightVector, -1);
-    return leftVector;
+    rightDirection = anglesToRight(angles);
+    leftDirection = maps\mp\_utility::vectorScale(rightDirection, -1);
+    return leftDirection;
+}
+anglesToBackward(angles)
+{
+    forwardDirection = anglesToForward(angles);
+    backwardDirection = maps\mp\_utility::vectorScale(forwardDirection, -1);
+    return backwardDirection;
 }
 //UTILS END
