@@ -14,8 +14,8 @@ main()
 	level.minPlayers = 2;
 	level.startBattleCountdown = 2;
     level.quickChatDelay = 0.8;
-    level.planeModel = "xmodel/c47";
-    level.parachuteModel = "xmodel/bx_parachute";
+    level.model_plane = "xmodel/c47";
+    level.model_parachute = "xmodel/bx_parachute";
 
     level.camouflages = [];
     level.camouflages[0] = "american";
@@ -23,6 +23,85 @@ main()
     level.camouflages[2] = "german";
     level.camouflages[3] = "russian";
 
+    zoneOriginStart = (1190, -1060, -520); //~center of map (zh_frenzy)
+	level.zone = spawn("script_model", zoneOriginStart);
+    level.zone.active = false;
+	level.zone.angles = (270, 0, 0); //DEPENDS ON MODELS TAG
+    level.zone.modelPath = "xmodel/playerhead_default"; //TODO: create an invisible model instead
+    level.zone.modelTag = "bip01 spine2";
+
+    level.zone.modes = [];
+
+	level.zone.modes[0]["name"] = "start";
+    level.zone.modes[0]["fxId"] = loadfx("fx/zone-start.efx");
+	level.zone.modes[0]["startSize"] = "20000";
+
+    level.zone.modes[1]["name"] = "start_1";
+    level.zone.modes[1]["fxId"] = loadfx("fx/zone-start_1.efx");
+    level.zone.modes[1]["life"] = "9500";
+	level.zone.modes[1]["startSize"] = level.zone.modes[1-1]["startSize"];
+	level.zone.modes[1]["endSize"] = "7000";
+
+    level.zone.modes[2]["name"] = "1";
+    level.zone.modes[2]["fxId"] = loadfx("fx/zone1.efx");
+	level.zone.modes[2]["startSize"] = level.zone.modes[2-1]["endSize"];
+
+	level.zone.modes[3]["name"] = "1_2";
+    level.zone.modes[3]["fxId"] = loadfx("fx/zone1_2.efx");
+    level.zone.modes[3]["life"] = "6000";
+	level.zone.modes[3]["startSize"] = level.zone.modes[3-1]["startSize"];
+	level.zone.modes[3]["endSize"] = "3800";
+
+    level.zone.modes[4]["name"] = "2";
+    level.zone.modes[4]["fxId"] = loadfx("fx/zone2.efx");
+	level.zone.modes[4]["startSize"] = level.zone.modes[4-1]["endSize"];
+
+	level.zone.modes[5]["name"] = "2_3";
+    level.zone.modes[5]["fxId"] = loadfx("fx/zone2_3.efx");
+    level.zone.modes[5]["life"] = "6000";
+	level.zone.modes[5]["startSize"] = level.zone.modes[5-1]["startSize"];
+	level.zone.modes[5]["endSize"] = "2700";
+
+    level.zone.modes[6]["name"] = "3";
+    level.zone.modes[6]["fxId"] = loadfx("fx/zone3.efx");
+	level.zone.modes[6]["startSize"] = level.zone.modes[6-1]["endSize"];
+
+    level.zone.modes[7]["name"] = "3_4";
+    level.zone.modes[7]["fxId"] = loadfx("fx/zone3_4.efx");
+    level.zone.modes[7]["life"] = "6000";
+	level.zone.modes[7]["startSize"] = level.zone.modes[7-1]["startSize"];
+	level.zone.modes[7]["endSize"] = "1500";
+
+	level.zone.modes[8]["name"] = "4";
+    level.zone.modes[8]["fxId"] = loadfx("fx/zone4.efx");
+	level.zone.modes[8]["startSize"] = level.zone.modes[8-1]["endSize"];
+
+	level.zone.modes[9]["name"] = "4_5";
+    level.zone.modes[9]["fxId"] = loadfx("fx/zone4_5.efx");
+    level.zone.modes[9]["life"] = "6000";
+	level.zone.modes[9]["startSize"] = level.zone.modes[9-1]["startSize"];
+	level.zone.modes[9]["endSize"] = "800";
+
+	level.zone.modes[10]["name"] = "5";
+    level.zone.modes[10]["fxId"] = loadfx("fx/zone5.efx");
+	level.zone.modes[10]["startSize"] = level.zone.modes[10-1]["endSize"];
+
+	level.zone.modes[11]["name"] = "5_6";
+    level.zone.modes[11]["fxId"] = loadfx("fx/zone5_6.efx");
+    level.zone.modes[11]["life"] = "6000";
+	level.zone.modes[11]["startSize"] = level.zone.modes[11-1]["startSize"];
+	level.zone.modes[11]["endSize"] = "300";
+
+	level.zone.modes[12]["name"] = "6";
+    level.zone.modes[12]["fxId"] = loadfx("fx/zone6.efx");
+	level.zone.modes[12]["startSize"] = level.zone.modes[12-1]["endSize"];
+
+	level.zone.modes[13]["name"] = "6_end";
+    level.zone.modes[13]["fxId"] = loadfx("fx/zone6_end.efx");
+    level.zone.modes[13]["life"] = "6000";
+	level.zone.modes[13]["startSize"] = level.zone.modes[13-1]["startSize"];
+	level.zone.modes[13]["endSize"] = "0";
+    
     if(getCvarInt("br_instantkill_bolt"))
         level.instantKill_bolt = true;
     if(getCvarInt("br_instantkill_pistol"))
@@ -36,6 +115,8 @@ main()
 		game["state"] = "playing";
 
 	level.mapended = false;
+    level.startingBattle = false;
+    level.battleStarted = false;
 
 	setarchive(true);
 }
@@ -65,18 +146,20 @@ Callback_StartGameType()
 	precacheMenu(game["menu_quickstatements"]);
 	precacheMenu(game["menu_quickresponses"]);
 
+    //SHADERS
 	precacheShader("black");
 	precacheShader("hudScoreboard_mp");
 	precacheShader("gfx/hud/hud@mpflag_none.tga");
 	precacheShader("gfx/hud/hud@mpflag_spectator.tga");
-	precacheStatusIcon("gfx/hud/hud@status_dead.tga");
-	precacheStatusIcon("gfx/hud/hud@status_connecting.tga");
-
     precacheShader("gfx/hud/damage_feedback.dds");
 
-    //MODELS
-    precacheModel(level.planeModel);
-    precacheModel(level.parachuteModel);
+    precacheStatusIcon("gfx/hud/hud@status_dead.tga");
+	precacheStatusIcon("gfx/hud/hud@status_connecting.tga");
+
+    //OBJECT MODELS
+    precacheModel(level.zone.modelPath);
+    precacheModel(level.model_plane);
+    precacheModel(level.model_parachute);
 
     //PLAYER MODELS
     mptype\american_airborne::precache();
@@ -89,7 +172,6 @@ Callback_StartGameType()
     game["russian_model"] = mptype\russian_conscript::main;
 
     //WEAPONS
-    //BOLT ACTION RIFLES
     precacheItem("springfield_mp");
     precacheItem("enfield_mp");
     precacheItem("mosin_nagant_mp");
@@ -110,7 +192,37 @@ Callback_StartGameType()
 
 	setClientNameMode("auto_change");
 
+    level.zone setModel(level.zone.modelPath);
+
     thread checkBattleReady();
+
+    //Starting zone
+    zone = "start";
+    for(i = 0; i < level.zone.modes.size; i++)
+	{
+		if (isDefined(level.zone.modes[i]) && isDefined(level.zone.modes[i]["name"]))
+		{
+			if (zone == level.zone.modes[i]["name"])
+			{
+				zoneModeIndex = i;
+				break;
+			}
+		}
+	}
+	if (!isDefined(zoneModeIndex))
+	{
+        printLn("### Zone mode unrecognized");
+		return;
+	}
+	setupZone(zoneModeIndex);
+
+
+    
+
+
+
+
+
 }
 Callback_PlayerConnect()
 {
@@ -459,6 +571,9 @@ spawnPlayer(origin, angles)
         self giveMaxAmmo(self.pers["weapon"]);
         self setSpawnWeapon(self.pers["weapon"]);
     }
+
+    if (level.battleStarted)
+        self thread checkPlayerInZone();
 	
 	self setClientCvar("cg_objectiveText", level.objectiveText);
 }
@@ -471,6 +586,7 @@ checkBattleReady()
 
 	color_yellow = (1, 1, 0);
 	color_red = (1, 0, 0);
+    color_green = (0, 1, 0);
 	fontScale_playerCount = 1.5;
 
     level.hud_waitingBackground = newHudElem();
@@ -533,10 +649,10 @@ checkBattleReady()
 		{
 			if(numberOfConnectedPlayers.size < level.minPlayers) //MIN PLAYERS NOT REACHED YET
 			{
-				if(isDefined(level.startingBattle)) //Lost required players count, reset
+				if(level.startingBattle) //Lost required players count, reset
 				{
                     level notify("battle_cancel");
-                    level.startingBattle = undefined;
+                    level.startingBattle = false;
 
                     level.hud_waitingForPlayers destroy();
 
@@ -551,11 +667,16 @@ checkBattleReady()
                     level.hud_waitingForPlayers.font = "bigfixed";
 				}
                 level.hud_waitingForPlayers setText(&"WAITING FOR PLAYERS");
+                level.hud_playersReady.color = color_yellow;
+                level.hud_playersMin.color = color_yellow;
 			}
 			else if(numberOfConnectedPlayers.size >= level.minPlayers) //MIN PLAYERS REACHED, START COUNTDOWN
 			{
-				if (numberOfConnectedPlayers.size <= level.maxClients && !isDefined(level.startingBattle))
+				if (numberOfConnectedPlayers.size <= level.maxClients && !level.startingBattle)
 				{
+                    level.hud_playersReady.color = color_green;
+                    level.hud_playersMin.color = color_green;
+
 					level.hud_waitingForPlayers setText(&"");
                     level.hud_waitingForPlayers.color = color_red;
                     level.hud_waitingForPlayers.label = &"BATTLE STARTING ";
@@ -575,18 +696,53 @@ startBattle()
 	wait level.startBattleCountdown;
     level notify("battle_start");
 
-    level.startingBattle = undefined;
+    level.startingBattle = false;
+    level.battleStarted = true;
     
     level.hud_waitingBackground destroy();
     level.hud_waitingForPlayers destroy();
     level.hud_playersReady destroy();
     level.hud_playersMin destroy();
+    
+
+
+
+
+
+
+    //Starting zone shrinks
+    zone = "start_1";
+    for(i = 0; i < level.zone.modes.size; i++)
+	{
+		if (isDefined(level.zone.modes[i]) && isDefined(level.zone.modes[i]["name"]))
+		{
+			if (zone == level.zone.modes[i]["name"])
+			{
+				zoneModeIndex = i;
+				break;
+			}
+		}
+	}
+	if (!isDefined(zoneModeIndex))
+	{
+        printLn("### Zone mode unrecognized");
+		return;
+	}
+	setupZone(zoneModeIndex);
+
+
+
+
+
+
+
+
 
     //using map zh_frenzy
-	originPlane = (2050, -14350, 8070);
+	originPlane = (2050, -18000, 8070);
     anglesPlane = (0, 90, 0);
     level.plane = spawn("script_model", originPlane);
-	level.plane setModel(level.planeModel);
+	level.plane setModel(level.model_plane);
     level.plane.angles = anglesPlane;
 
     originPlanePov =
@@ -640,6 +796,193 @@ startBattle()
     level.planePov delete();
 }
 
+//ZONE FUNCTIONS
+setupZone(zoneModeIndex)
+{
+	for(i = 0; i < level.zone.modes[zoneModeIndex]["name"].size; i++)
+	{
+		if (level.zone.modes[zoneModeIndex]["name"][i] == "_")
+		{
+			modeIsTransition = true;
+			break;
+		}
+    }
+	if (!isDefined(modeIsTransition)) //STATIC ZONE
+	{
+		if (level.zone.active) //TODO: remove after tests
+		{
+            printLn("### Static zone already active");
+			return;
+		}
+		level.zone.indexMode = zoneModeIndex;
+		level.zone.life = 1000;
+		level.zone.currentSize = (int)level.zone.modes[zoneModeIndex]["startSize"];
+		level.zone thread playZone(level.zone.modes[zoneModeIndex]["fxId"], true);
+	}
+	else //SHRINKING ZONE
+	{
+        level.zone.active = false;
+		level.zoneLooper delete();
+		level.zone.indexMode = zoneModeIndex;
+		level.zone.life = (int)level.zone.modes[zoneModeIndex]["life"];
+		level.zone.startSize = (int)level.zone.modes[zoneModeIndex]["startSize"];
+		level.zone.currentSize = level.zone.startSize;
+		level.zone.endSize = (int)level.zone.modes[zoneModeIndex]["endSize"];
+		level.zone.nextZoneIndex = level.zone.indexMode + 1;
+		level.zone thread playZone(level.zone.modes[zoneModeIndex]["fxId"], false);
+		level.zone thread keepZoneSizeVarUpdated();
+	}
+	level.zone.active = true;
+    printLn("### Playing zone");
+}
+playZone(fx, static)
+{
+	if (static)
+	{
+		level.zoneLooper = playLoopedFX(fx, (self.life / 1000), self.origin);
+	}
+	else
+	{
+        wait 0.5; //.05 was not enough
+        playFXOnTag(fx, self, self.modelTag);
+		if (self.indexMode != level.zone.modes.size - 1) //FINAL FULL SHRINKS DOESNT PLAY NEXT
+		{
+			wait (self.life / 1000);
+			//PLAY NEXT STATIC ZONE
+			level.zone.active = false;
+			level thread setupZone(self.nextZoneIndex);
+		}
+	}
+}
+keepZoneSizeVarUpdated()
+{
+	currentTime = getTime();
+	startTime = currentTime;
+	while(currentTime - startTime < self.life)
+	{
+		progress = (float)(currentTime - startTime) / self.life;
+		currentSize = self.startSize + (int)((self.endSize - self.startSize) * progress);
+		self.currentSize = currentSize;
+		wait .05;
+		currentTime = getTime();
+	}
+}
+
+/*
+moveZone()
+{
+	zoneX = self.origin[0];
+	zoneY = self.origin[1];
+	zoneZ = self.origin[2];
+	destinationOrigin = (zoneX, zoneY + 800, zoneZ);
+	self moveTo(destinationOrigin, (self.life / 1000));
+	wait (self.life / 1000);
+	self delete();
+	level.zoneActive = undefined;
+}
+*/
+
+checkPlayerInZone(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b0, b1, b2, b2, b4, b5, b6, b7, b8, b9)
+{
+	self endon("death");
+	self endon("disconnect");
+
+	for(;;)
+	{
+		if (isDefined(level.zone.active))
+		{
+			if (!isDefined(self.hudInZoneCheck))
+			{
+				self.hudInZoneCheck = newClientHudElem(self); //TODO: improve design for release
+				self.hudInZoneCheck.x = 30;
+				self.hudInZoneCheck.y = 150;
+				self.hudInZoneCheck.font = "bigfixed";
+				self.hudInZoneCheck.fontScale = 1.5;
+			}
+			if (!isDefined(self.hudStorm))
+			{
+				self.hudStorm = newClientHudElem(self);
+				self.hudStorm.x = 0;
+				self.hudStorm.y = 0;
+				self.hudStorm setShader("black", 640, 480);
+				self.hudStorm.alpha = 0;
+			}
+
+			//IGNORE Z
+			selfOriginX = self.origin[0];
+			selfOriginY = self.origin[1];
+			selfOriginNoZ = (selfOriginX, selfOriginY, 0);
+			//---
+			zoneOriginX = level.zone.origin[0];
+			zoneOriginY = level.zone.origin[1];
+			zoneOriginNoZ = (zoneOriginX, zoneOriginY, 0);
+			
+			if (distance(selfOriginNoZ, zoneOriginNoZ) < level.zone.currentSize)
+			{
+				//IN ZONE
+				self.hudInZoneCheck setText(&"^2IN ZONE");
+				self.hudStorm.alpha = 0;
+			}
+			else
+			{
+				//OUT OF ZONE
+				self.hudInZoneCheck setText(&"^1OUT OF ZONE");
+				self.hudStorm.alpha = 0.3;
+
+				damagePlayer = false;
+				if (isDefined(self.lastZoneDamageTime))
+				{
+					secondsPassed = (getTime() - self.lastZoneDamageTime) / 1000;
+					if (secondsPassed > 2)
+					{
+						damagePlayer = true;
+					}
+				}
+				else
+				{
+					damagePlayer = true;
+				}
+
+				if (damagePlayer)
+				{
+					if (isAlive(self))
+					{
+						self endon("disconnect");
+
+						eInflictor = level.zone;
+						eAttacker = level.zone;
+						iDamage = 5;
+						iDFlags = 0;
+						sMeansOfDeath = "MOD_EXPLOSIVE";
+						sWeapon = "none";
+						vPoint = undefined;
+						vDir = undefined;
+						sHitLoc = "none";
+						psOffsetTime = 0;
+						self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime);
+						self.lastZoneDamageTime = getTime();
+					}
+				}
+			}
+		}
+		else
+		{
+			//RESET HUD
+			if (isDefined(self.hudInZoneCheck))
+			{
+				self.hudInZoneCheck destroy();
+			}
+			if (isDefined(self.hudStorm))
+			{
+				self.hudStorm destroy();
+			}
+		}
+
+		wait .05;
+	}
+}
+//ZONE FUNCTIONS END
+
 //SKYDIVE FUNCTIONS
 checkPlayerJumped()
 {
@@ -653,7 +996,7 @@ checkPlayerJumped()
 
 	for(;;)
 	{
-		if (self useButtonPressed() || isDefined(self.forceJump))
+		if (self useButtonPressed() || isDefined(self.forceJump)) //TODO: prevent forceJump players stuck in each other
 		{
             self.jumped = true;
             self.hud_jump_parachute setText(&"");
@@ -774,14 +1117,14 @@ checkPlayerDive()
                 //OPEN
                 self.hudParachute_indicatorTest setText(&"^2PARACHUTE OPENED"); //TODO: remove after tests
                 self.parachuteEnabled = true;
-                self attach(level.parachuteModel, "tag_belt_back");
+                self attach(level.model_parachute, "tag_belt_back");
             }
             else
             {
                 //CLOSE
                 self.hudParachute_indicatorTest setText(&"^1PARACHUTE CLOSED");
                 self.parachuteEnabled = false;
-                self detach(level.parachuteModel, "tag_belt_back");
+                self detach(level.model_parachute, "tag_belt_back");
             }
         }
         
@@ -978,7 +1321,7 @@ checkLanded()
 
             if (self.parachuteEnabled)
             {
-                self detach(level.parachuteModel, "tag_belt_back");
+                self detach(level.model_parachute, "tag_belt_back");
                 self.parachuteEnabled = false;
             }
             //self setClientCvar("cg_thirdPerson", "0");
