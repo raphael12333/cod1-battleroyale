@@ -2,15 +2,11 @@
 
 ### Requirements to run the tests
 
-I started by doing tests using *br_tests.gsc* on a dm, it uses custom MiscMod commands, to try this file you would need to:
-- setup [MiscMod](https://cod.pm/guide/d0da8d/installing-and-configuring-codam-miscmod)
-- read the comments at the beginning
-- put `___fx.pk3` in the server main folder, this file must be downloaded by the client.
-###### `-------------`
-Now I started to create a mod independent gametype file: *br.gsc*  
-To try it you would need to put `___customizations.pk3` in the server main folder, this file must be downloaded by the client.
-###### `-------------`
-In all case you would need to use the .pk3 map file from the map folder
+- put `___assets.pk3` in the server main folder, this file must be downloaded by the client.
+- setup ***br.gsc*** in a *pk3* file like a stock gametype
+  - give the priority to this pk3 over the assets one, because the assets pk3 contains a file named *br.gsc* too
+- use the *zh_frenzy* map version of this repo
+- use the codextended server extension, i suggest [my fork](https://github.com/raphael12333/codextended-server)
 ___
 ### Some TODO
 - Automatize the zone cycle and randomize the locations
