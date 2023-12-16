@@ -9,11 +9,41 @@ main()
 	maps\mp\gametypes\_callbacksetup::SetupCallbacks();
 
     level.objectiveText = "Be the last man standing.";
-
     level.maxClients = getCvarInt("sv_maxclients");
-	level.minPlayers = 2;
-	level.startBattleCountdown = 2;
-    level.quickChatDelay = 0.8;
+    level.text_parachuteDeployed = &"PARACHUTE DEPLOYED";
+    level.text_parachuteNotDeployed = &"PARACHUTE NOT DEPLOYED";
+
+    level.minPlayers = 20;
+    if(getCvarInt("br_minPlayers")) {
+        level.minPlayers = getCvarInt("br_minPlayers");
+    }
+    level.startBattleCountdown = 30;
+    if(getCvarInt("br_startBattleCountdown")) {
+        level.startBattleCountdown = getCvarInt("br_startBattleCountdown");
+    }
+    level.quickChatDelay = 1;
+    if(getCvarFloat("br_quickChatDelay")) {
+        level.quickChatDelay = getCvarFloat("br_quickChatDelay");
+    }
+    level.instantKill_bolt = true;
+    if (getCvar("br_instantkill_bolt") == "0") {
+        level.instantKill_bolt = false;
+    }
+    level.instantKill_pistol = false;
+    if (getCvarInt("br_instantkill_pistol")) {
+        level.instantKill_pistol = true;
+    }
+    level.instantKill_melee = true;
+    if (getCvar("br_instantkill_melee") == "0") {
+        level.instantKill_melee = false;
+    }
+    level.damageFeedback = true;
+    if (getCvar("br_damagefeedback") == "0") {
+        level.damageFeedback = false;
+    }
+
+    //MODEL PATHS
+    level.model_zone = "xmodel/playerhead_default"; //TODO: create an invisible model instead
     level.model_plane = "xmodel/c47";
     level.model_parachute = "xmodel/bx_parachute";
 
@@ -25,10 +55,12 @@ main()
 
     zoneOriginStart = (1190, -1060, -520); //~center of map (zh_frenzy)
 	level.zone = spawn("script_model", zoneOriginStart);
-    level.zone.active = false;
 	level.zone.angles = (270, 0, 0); //DEPENDS ON MODELS TAG
-    level.zone.modelPath = "xmodel/playerhead_default"; //TODO: create an invisible model instead
     level.zone.modelTag = "bip01 spine2";
+    level.zone.objnum = 0;
+    objective_add(level.zone.objnum, "current", level.zone.origin, "gfx/hud/objective.tga");
+    objective_onEntity(level.zone.objnum, level.zone);
+    objective_team(level.zone.objnum, "none");
 
     level.zone.modes = [];
 
@@ -101,26 +133,23 @@ main()
     level.zone.modes[13]["life"] = "6000";
 	level.zone.modes[13]["startSize"] = level.zone.modes[13-1]["startSize"];
 	level.zone.modes[13]["endSize"] = "0";
-    
-    if(getCvarInt("br_instantkill_bolt"))
-        level.instantKill_bolt = true;
-    if(getCvarInt("br_instantkill_pistol"))
-		level.instantKill_pistol = true;
-    if(getCvarInt("br_instantkill_melee"))
-		level.instantKill_melee = true;
-    if(getCvarInt("br_damagefeedback"))
-        level.damageFeedback = true;
+
+    level.color_red = (1, 0, 0);
+    level.color_green = (0, 1, 0);
 
 	if(!isdefined(game["state"]))
 		game["state"] = "playing";
 
 	level.mapended = false;
+    level.zone.active = false;
     level.startingBattle = false;
     level.battleStarted = false;
 
+    level.healthqueue = [];
+	level.healthqueuecurrent = 0;
+
 	setarchive(true);
 }
-
 //CALLBACKS
 Callback_StartGameType()
 {
@@ -152,12 +181,13 @@ Callback_StartGameType()
 	precacheShader("gfx/hud/hud@mpflag_none.tga");
 	precacheShader("gfx/hud/hud@mpflag_spectator.tga");
     precacheShader("gfx/hud/damage_feedback.dds");
+    precacheShader("gfx/hud/objective.tga");
 
     precacheStatusIcon("gfx/hud/hud@status_dead.tga");
 	precacheStatusIcon("gfx/hud/hud@status_connecting.tga");
 
     //OBJECT MODELS
-    precacheModel(level.zone.modelPath);
+    precacheModel(level.model_zone);
     precacheModel(level.model_plane);
     precacheModel(level.model_parachute);
 
@@ -187,15 +217,28 @@ Callback_StartGameType()
     precacheItem("mk1britishfrag_mp");
     precacheItem("rgd-33russianfrag_mp");
 
+    precacheItem("item_health");
+
     maps\mp\gametypes\_teams::initGlobalCvars();
 	maps\mp\gametypes\_teams::restrictPlacedWeapons();
 
 	setClientNameMode("auto_change");
 
-    level.zone setModel(level.zone.modelPath);
+    //Hide messages from non-living players to alive players
+    if (getCvar("x_deadchat") == "0")
+    {
+        level.specHud = newTeamHudElem("spectator");
+        level.specHud.x = 5;
+        level.specHud.y = 125;
+        level.specHud setText(&"Your messages are not shown to alive players");
+    }
 
-    thread checkBattleReady();
+    level.zone setModel(level.model_zone);
 
+    
+
+
+    
     //Starting zone
     zone = "start";
     for(i = 0; i < level.zone.modes.size; i++)
@@ -217,12 +260,11 @@ Callback_StartGameType()
 	setupZone(zoneModeIndex);
 
 
+
+
+
     
-
-
-
-
-
+    thread checkBattleReady();
 }
 Callback_PlayerConnect()
 {
@@ -264,8 +306,8 @@ Callback_PlayerConnect()
             case "british":
             case "german":
             case "russian":
-			case "random":
-				if(response == "random")
+			case "autoassign":
+				if(response == "autoassign")
 				{
                     response = level.camouflages[randomInt(level.camouflages.size)];
 				}
@@ -370,6 +412,7 @@ Callback_PlayerConnect()
 Callback_PlayerDisconnect()
 {
 	iprintln(&"MPSCRIPT_DISCONNECTED", self);
+    self notify("death");
 }
 Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc)
 {
@@ -388,25 +431,42 @@ Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sW
     {
         if(sMeansOfDeath != "MOD_FALL" && sMeansOfDeath != "MOD_MELEE")
         {
-            if (isBoltWeapon(sWeapon))
-            {
-                if(isDefined(level.instantKill_bolt))
+            if (isBoltWeapon(sWeapon)) {
+                if(level.instantKill_bolt)
                     iDamage = iDamage + 100;
             }
-            else if (isSecondaryWeapon(sWeapon))
-            {
-                if(isDefined(level.instantKill_pistol))
+            else if (isSecondaryWeapon(sWeapon)) {
+                if(level.instantKill_pistol)
                     iDamage = iDamage + 100;
             }
         }
         else if(sMeansOfDeath == "MOD_MELEE")
         {
-            if(isDefined(level.instantKill_melee))
+            if(level.instantKill_melee)
                 iDamage = iDamage + 100;
         }
-        if(isDefined(level.damageFeedback))
+        if(eAttacker != self && level.damageFeedback)
             eAttacker thread showDamageFeedback();
     }
+
+    if ((self.health - iDamage) <= 0)
+    {
+        // Player will die
+        // Make the player drop his weapons
+        primary = self getWeaponSlotWeapon("primary");
+        primaryb = self getWeaponSlotWeapon("primaryb");
+        pistol = self getWeaponSlotWeapon("pistol");
+        grenade = self getWeaponSlotWeapon("grenade");
+        if(isDefined(primary))
+            self dropItem(primary);
+        if(isDefined(primaryb))
+            self dropItem(primaryb);
+        if(isDefined(pistol))
+            self dropItem(pistol);
+        if(isDefined(grenade))
+            self dropItem(grenade);
+    }
+
 	// Apply the damage to the player
 	self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc);
 }
@@ -423,6 +483,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 
 	// send out an obituary message to all clients about the kill
 	obituary(self, attacker, sWeapon, sMeansOfDeath);
+    self notify("death");
 
 	self.sessionstate = "dead";
 	self.statusicon = "gfx/hud/hud@status_dead.tga";
@@ -447,41 +508,15 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 			attacker.pers["score"]++;
 			attacker.score = attacker.pers["score"];
 		}
-		
-		lpattacknum = attacker getEntityNumber();
-		lpattackname = attacker.name;
-		lpattackercamouflage = attacker.pers["camouflage"];
 	}
 	else // If you weren't killed by a player, you were in the wrong place at the wrong time
 	{
 		doKillcam = false;
-
-		lpattacknum = -1;
-		lpattackname = "";
-		lpattackerteam = "world";
 	}
 
-	// Make the player drop his weapons
-    primary = self getWeaponSlotWeapon("primary");
-    primaryb = self getWeaponSlotWeapon("primaryb");
-    pistol = self getWeaponSlotWeapon("pistol");
-    grenade = self getWeaponSlotWeapon("grenade");
-    if(isDefined(primary))
-        self dropItem(primary);
-    if(isDefined(primaryb))
-        self dropItem(primaryb);
-    if(isDefined(pistol))
-        self dropItem(pistol);
-    if(isDefined(grenade))
-        self dropItem(grenade);
-    
+	// Make the player drop health
+	self dropHealth();
 	body = self cloneplayer();
-
-    /*
-	// TODO: Add additional checks that allow killcam when the last player killed wouldn't end the round (bomb is planted)
-	if(!level.exist[self.pers["team"]]) // If the last player on a team was just killed, don't do killcam
-		doKillcam = false;
-    */
 
 	delay = 2;	// Delay the player becoming a spectator till after he's done dying
 	wait delay;	// ?? Also required for Callback_PlayerKilled to complete before killcam can execute
@@ -492,7 +527,6 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 	{
 		currentorigin = self.origin;
 		currentangles = self getPlayerAngles();
-
 		self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles);
 	}
 }
@@ -506,12 +540,12 @@ spawnSpectator(origin, angles)
 	
 	resettimeout();
 
+    if (self.sessionstate != "dead")
+        self.statusicon = "";
+    self.sessionteam = "spectator";
 	self.sessionstate = "spectator";
 	self.spectatorclient = -1;
 	self.archivetime = 0;
-
-	if(self.pers["team"] == "spectator")
-		self.statusicon = "";
 
 	if(isdefined(origin) && isdefined(angles))
 		self spawn(origin, angles);
@@ -584,36 +618,31 @@ checkBattleReady()
 
     level endon("battle_start");
 
-	color_yellow = (1, 1, 0);
-	color_red = (1, 0, 0);
-    color_green = (0, 1, 0);
-	fontScale_playerCount = 1.5;
+	fontScale_playerCount = 1.2;
 
     level.hud_waitingBackground = newHudElem();
     level.hud_waitingBackground.alignX = "center";
 	level.hud_waitingBackground.x = 320;
 	level.hud_waitingBackground.y = 20;
-    level.hud_waitingBackground.alpha = 0.65;
+    level.hud_waitingBackground.alpha = 0.6;
     level.hud_waitingBackground.sort = -1;
-    level.hud_waitingBackground setShader("black", 390, 75);
+    level.hud_waitingBackground setShader("black", 360, 65);
 
 	level.hud_waitingForPlayers = newHudElem();
 	level.hud_waitingForPlayers.alignX = "center";
     level.hud_waitingForPlayers.alignY = "middle";
 	level.hud_waitingForPlayers.x = 320;
-	level.hud_waitingForPlayers.y = level.hud_waitingBackground.y + 22;
-	level.hud_waitingForPlayers.color = color_yellow;
-	level.hud_waitingForPlayers.fontScale = 1.5;
+	level.hud_waitingForPlayers.y = level.hud_waitingBackground.y + 21;
+	level.hud_waitingForPlayers.fontScale = 1.1;
     level.hud_waitingForPlayers.font = "bigfixed";
 
-    distance_ready_min = 17;
+    distance_ready_min = 15;
 
     level.hud_playersReady = newHudElem();
     level.hud_playersReady.alignX = "center";
     level.hud_playersReady.alignY = "middle";
 	level.hud_playersReady.x = level.hud_waitingForPlayers.x - distance_ready_min;
-	level.hud_playersReady.y = level.hud_waitingForPlayers.y + 30;
-	level.hud_playersReady.color = color_yellow;
+	level.hud_playersReady.y = level.hud_waitingForPlayers.y + 23;
 	level.hud_playersReady.fontScale = fontScale_playerCount;
     level.hud_playersReady.font = "bigfixed";
     
@@ -622,7 +651,6 @@ checkBattleReady()
     level.hud_playersMin.alignY = "middle";
 	level.hud_playersMin.x = level.hud_waitingForPlayers.x + distance_ready_min;
 	level.hud_playersMin.y = level.hud_playersReady.y;
-	level.hud_playersMin.color = color_yellow;
 	level.hud_playersMin.fontScale = fontScale_playerCount;
     level.hud_playersMin.font = "bigfixed";
     level.hud_playersMin.label = &"/";
@@ -661,25 +689,21 @@ checkBattleReady()
                     level.hud_waitingForPlayers.alignX = "center";
                     level.hud_waitingForPlayers.alignY = "middle";
                     level.hud_waitingForPlayers.x = 320;
-                    level.hud_waitingForPlayers.y = 40;
-                    level.hud_waitingForPlayers.color = color_yellow;
-                    level.hud_waitingForPlayers.fontScale = 1.5;
+                    level.hud_waitingForPlayers.y = level.hud_waitingBackground.y + 20;
+                    level.hud_waitingForPlayers.fontScale = 1.1;
                     level.hud_waitingForPlayers.font = "bigfixed";
 				}
                 level.hud_waitingForPlayers setText(&"WAITING FOR PLAYERS");
-                level.hud_playersReady.color = color_yellow;
-                level.hud_playersMin.color = color_yellow;
 			}
 			else if(numberOfConnectedPlayers.size >= level.minPlayers) //MIN PLAYERS REACHED, START COUNTDOWN
 			{
-				if (numberOfConnectedPlayers.size <= level.maxClients && !level.startingBattle)
+				if(numberOfConnectedPlayers.size <= level.maxClients && !level.startingBattle)
 				{
-                    level.hud_playersReady.color = color_green;
-                    level.hud_playersMin.color = color_green;
+                    level.hud_playersReady.color = level.color_green;
+                    level.hud_playersMin.color = level.color_green;
 
 					level.hud_waitingForPlayers setText(&"");
-                    level.hud_waitingForPlayers.color = color_red;
-                    level.hud_waitingForPlayers.label = &"BATTLE STARTING ";
+                    level.hud_waitingForPlayers.label = &"BATTLE STARTING: ";
 					level.hud_waitingForPlayers setTimer(level.startBattleCountdown);
                     thread startBattle();
 				}
@@ -729,6 +753,7 @@ startBattle()
 		return;
 	}
 	setupZone(zoneModeIndex);
+    
 
 
 
@@ -867,7 +892,6 @@ keepZoneSizeVarUpdated()
 		currentTime = getTime();
 	}
 }
-
 /*
 moveZone()
 {
@@ -881,38 +905,31 @@ moveZone()
 	level.zoneActive = undefined;
 }
 */
-
-checkPlayerInZone(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b0, b1, b2, b2, b4, b5, b6, b7, b8, b9)
+checkPlayerInZone()
 {
-	self endon("death");
-	self endon("disconnect");
+    self endon("death");
+
+    self.hudInStorm = newClientHudElem(self);
+    self.hudInStorm.x = 0;
+    self.hudInStorm.y = 0;
+    self.hudInStorm setShader("black", 640, 480);
+    self.hudInStorm.alpha = 0;
+
+    self.hudInStormAlert = newClientHudElem(self);
+    self.hudInStormAlert.x = 460;
+    self.hudInStormAlert.y = 140;
+    self.hudInStormAlert.color = level.color_red;
+    self.hudInStormAlert.fontScale = 1.3;
 
 	for(;;)
 	{
-		if (isDefined(level.zone.active))
+		if (level.zone.active)
 		{
-			if (!isDefined(self.hudInZoneCheck))
-			{
-				self.hudInZoneCheck = newClientHudElem(self); //TODO: improve design for release
-				self.hudInZoneCheck.x = 30;
-				self.hudInZoneCheck.y = 150;
-				self.hudInZoneCheck.font = "bigfixed";
-				self.hudInZoneCheck.fontScale = 1.5;
-			}
-			if (!isDefined(self.hudStorm))
-			{
-				self.hudStorm = newClientHudElem(self);
-				self.hudStorm.x = 0;
-				self.hudStorm.y = 0;
-				self.hudStorm setShader("black", 640, 480);
-				self.hudStorm.alpha = 0;
-			}
-
-			//IGNORE Z
+            //IGNORE Z
 			selfOriginX = self.origin[0];
 			selfOriginY = self.origin[1];
 			selfOriginNoZ = (selfOriginX, selfOriginY, 0);
-			//---
+
 			zoneOriginX = level.zone.origin[0];
 			zoneOriginY = level.zone.origin[1];
 			zoneOriginNoZ = (zoneOriginX, zoneOriginY, 0);
@@ -920,14 +937,14 @@ checkPlayerInZone(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b0, b1, b2, b2, b4, b5
 			if (distance(selfOriginNoZ, zoneOriginNoZ) < level.zone.currentSize)
 			{
 				//IN ZONE
-				self.hudInZoneCheck setText(&"^2IN ZONE");
-				self.hudStorm.alpha = 0;
+                self.hudInStorm.alpha = 0;
+                self.hudInStormAlert setText(&"");
 			}
 			else
 			{
-				//OUT OF ZONE
-				self.hudInZoneCheck setText(&"^1OUT OF ZONE");
-				self.hudStorm.alpha = 0.3;
+				//IN STORM
+                self.hudInStorm.alpha = 0.3;
+				self.hudInStormAlert setText(&"You are in the storm!");
 
 				damagePlayer = false;
 				if (isDefined(self.lastZoneDamageTime))
@@ -945,36 +962,19 @@ checkPlayerInZone(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b0, b1, b2, b2, b4, b5
 
 				if (damagePlayer)
 				{
-					if (isAlive(self))
-					{
-						self endon("disconnect");
-
-						eInflictor = level.zone;
-						eAttacker = level.zone;
-						iDamage = 5;
-						iDFlags = 0;
-						sMeansOfDeath = "MOD_EXPLOSIVE";
-						sWeapon = "none";
-						vPoint = undefined;
-						vDir = undefined;
-						sHitLoc = "none";
-						psOffsetTime = 0;
-						self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime);
-						self.lastZoneDamageTime = getTime();
-					}
+                    eInflictor = level.zone;
+                    eAttacker = level.zone;
+                    iDamage = 5;
+                    iDFlags = 0;
+                    sMeansOfDeath = "MOD_UNKNOWN";
+                    sWeapon = "none";
+                    vPoint = undefined;
+                    vDir = undefined;
+                    sHitLoc = "none";
+                    psOffsetTime = 0;
+                    self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime);
+                    self.lastZoneDamageTime = getTime();
 				}
-			}
-		}
-		else
-		{
-			//RESET HUD
-			if (isDefined(self.hudInZoneCheck))
-			{
-				self.hudInZoneCheck destroy();
-			}
-			if (isDefined(self.hudStorm))
-			{
-				self.hudStorm destroy();
 			}
 		}
 
@@ -992,7 +992,7 @@ checkPlayerJumped()
     self.hud_jump_parachute.x = 320;
 	self.hud_jump_parachute.y = 40;
 	self.hud_jump_parachute.fontScale = 1.2;
-	self.hud_jump_parachute setText(&"^3Press ^1[{+activate}] ^3to jump");
+	self.hud_jump_parachute setText(&"Press ^1[{+activate}] ^7to jump");
 
 	for(;;)
 	{
@@ -1028,53 +1028,57 @@ checkPlayerJumped()
 }
 checkReleasedUseButton()
 {
-    self endon("disconnect");
+    self endon("death");
     self endon("landed");
+
     while(self useButtonPressed())
-    {
         wait .05;
-    }
     self.blockParachuteCheck = false;
 }
 checkPlayerDive()
 {
+    self endon("death");
+    self endon("landed");
+
     self thread checkLanded();
 
-    self.hud_jump_parachute setText(&"^3Press ^1[{+activate}] ^3to open/close parachute");
+    self.hud_jump_parachute setText(&"Press ^1[{+activate}] ^7to open/close parachute");
 
     self.parachuteEnabled = false;
-    self.hudParachute_indicatorTest = newClientHudElem(self); //TODO: remove after tests
-    self.hudParachute_indicatorTest.x = 70;
-    self.hudParachute_indicatorTest.y = 200;
-    self.hudParachute_indicatorTest.fontScale = 1.3;
-    self.hudParachute_indicatorTest setText(&"^1PARACHUTE CLOSED");
+
+    self.hud_parachuteStateIndicator = newClientHudElem(self); //TODO: remove after tests
+    self.hud_parachuteStateIndicator.alignX = "center";
+    self.hud_parachuteStateIndicator.alignY = "middle";
+    self.hud_parachuteStateIndicator.x = 320;
+    self.hud_parachuteStateIndicator.y = self.hud_jump_parachute.y + 25;
+    self.hud_parachuteStateIndicator.color = level.color_red;
+    self.hud_parachuteStateIndicator.fontScale = 1.3;
+    self.hud_parachuteStateIndicator setText(level.text_parachuteNotDeployed);
 
     self.blockParachuteCheck = false;
 
     //PHYSICS VARIABLES
     //Acceleration multiplier (diagonal fall)
-    acceleration_skydive_forward = 50;
-    acceleration_skydive_onlyLeftRight = 35;
-    acceleration_skydive_forwardLeftRight = 45;
+    acceleration_skydive_forward = 40;
+    acceleration_skydive_onlyLeftRight = 25;
+    acceleration_skydive_forwardLeftRight = 35;
 
-    acceleration_parachute_forward = 70;
-    acceleration_parachute_onlyLeftRight = 50;
-    acceleration_parachute_forwardLeftRight = 60;
+    acceleration_parachute_forward = 60;
+    acceleration_parachute_onlyLeftRight = 40;
+    acceleration_parachute_forwardLeftRight = 50;
 
-    acceleration_parachute_backward = 45;
-    acceleration_parachute_backwardLeftRight = 30;
+    acceleration_parachute_backward = 35;
+    acceleration_parachute_backwardLeftRight = 20;
 
     //Air resistance multiplier (fall slowdown)
     airResistance_skydive_idle = 0.975;
-    airResistance_skydive_forward = 0.995;
+    airResistance_skydive_forward = 0.99;
     airResistance_parachute_idle = 0.85;
-    airResistance_parachute_forward = 0.96;
+    airResistance_parachute_forward = 0.95;
 
     //CHECK MOVEMENTS
 	for(;;)
 	{
-		self endon("landed");
-
         //DIRECTION KEYS CHECK
         goingForward = false;
         goingBackward = false;
@@ -1114,15 +1118,17 @@ checkPlayerDive()
         {
             if (!self.parachuteEnabled)
             {
-                //OPEN
-                self.hudParachute_indicatorTest setText(&"^2PARACHUTE OPENED"); //TODO: remove after tests
+                //OPENED
+                self.hud_parachuteStateIndicator.color = level.color_green;
+                self.hud_parachuteStateIndicator setText(level.text_parachuteDeployed); //TODO: show arms/hands instead
                 self.parachuteEnabled = true;
                 self attach(level.model_parachute, "tag_belt_back");
             }
             else
             {
-                //CLOSE
-                self.hudParachute_indicatorTest setText(&"^1PARACHUTE CLOSED");
+                //CLOSED
+                self.hud_parachuteStateIndicator.color = level.color_red;
+                self.hud_parachuteStateIndicator setText(level.text_parachuteNotDeployed);
                 self.parachuteEnabled = false;
                 self detach(level.model_parachute, "tag_belt_back");
             }
@@ -1309,6 +1315,8 @@ checkPlayerDive()
 }
 checkLanded()
 {
+    self endon("death");
+    
 	for(;;)
 	{
 		if (self isOnGround())
@@ -1317,7 +1325,7 @@ checkLanded()
             self.willLand = false;
 
             self.hud_jump_parachute destroy();
-            self.hudParachute_indicatorTest destroy();
+            self.hud_parachuteStateIndicator destroy();
 
             if (self.parachuteEnabled)
             {
@@ -1326,7 +1334,7 @@ checkLanded()
             }
             //self setClientCvar("cg_thirdPerson", "0");
             
-            wait .5;
+            wait .25;
             loadout();
             self giveWeapon(self.pers["weapon"]);
             self giveMaxAmmo(self.pers["weapon"]);
@@ -1342,7 +1350,6 @@ checkLanded()
 showDamageFeedback()
 {
     self endon("spawned");
-    self endon("disconnect");
 
     if(isDefined(self.hitBlip))
         self.hitBlip destroy();
@@ -1398,7 +1405,6 @@ killcam(attackerNum, delay)
 		self.kc_topbar.alpha = 0.5;
 		self.kc_topbar setShader("black", 640, 112);
 	}
-
 	if(!isdefined(self.kc_bottombar))
 	{
 		self.kc_bottombar = newClientHudElem(self);
@@ -1408,7 +1414,6 @@ killcam(attackerNum, delay)
 		self.kc_bottombar.alpha = 0.5;
 		self.kc_bottombar setShader("black", 640, 112);
 	}
-
 	if(!isdefined(self.kc_title))
 	{
 		self.kc_title = newClientHudElem(self);
@@ -1418,10 +1423,9 @@ killcam(attackerNum, delay)
 		self.kc_title.alignX = "center";
 		self.kc_title.alignY = "middle";
 		self.kc_title.sort = 1; // force to draw after the bars
-		self.kc_title.fontScale = 3.5;
+		self.kc_title.fontScale = 2.5;
 	}
 	self.kc_title setText(&"MPSCRIPT_KILLCAM");
-
 	if(!isdefined(self.kc_skiptext))
 	{
 		self.kc_skiptext = newClientHudElem(self);
@@ -1443,6 +1447,10 @@ killcam(attackerNum, delay)
 	self.spectatorclient = -1;
 	self.archivetime = 0;
 	self.killcam = undefined;
+
+    currentorigin = self.origin;
+	currentangles = self getPlayerAngles();
+	self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles);
 }
 waitKillcamTime()
 {
@@ -2248,6 +2256,20 @@ loadout()
         self giveMaxAmmo("stielhandgranate_mp");
         break;
     }
+}
+
+dropHealth()
+{
+	if(isdefined(level.healthqueue[level.healthqueuecurrent]))
+		level.healthqueue[level.healthqueuecurrent] delete();
+	
+	level.healthqueue[level.healthqueuecurrent] = spawn("item_health", self.origin + (0, 0, 1));
+	level.healthqueue[level.healthqueuecurrent].angles = (0, randomint(360), 0);
+
+	level.healthqueuecurrent++;
+	
+	if(level.healthqueuecurrent >= 16)
+		level.healthqueuecurrent = 0;
 }
 
 anglesToLeft(angles)
