@@ -26,19 +26,19 @@ main()
         level.quickChatDelay = getCvarFloat("br_quickChatDelay");
     }
     level.instantKill_bolt = true;
-    if (getCvar("br_instantkill_bolt") == "0") {
+    if(getCvar("br_instantkill_bolt") == "0") {
         level.instantKill_bolt = false;
     }
     level.instantKill_pistol = false;
-    if (getCvarInt("br_instantkill_pistol")) {
+    if(getCvarInt("br_instantkill_pistol")) {
         level.instantKill_pistol = true;
     }
     level.instantKill_melee = true;
-    if (getCvar("br_instantkill_melee") == "0") {
+    if(getCvar("br_instantkill_melee") == "0") {
         level.instantKill_melee = false;
     }
     level.damageFeedback = true;
-    if (getCvar("br_damagefeedback") == "0") {
+    if(getCvar("br_damagefeedback") == "0") {
         level.damageFeedback = false;
     }
 
@@ -135,15 +135,18 @@ main()
 	level.zone.modes[13]["endSize"] = "0";
 
     level.color_red = (1, 0, 0);
+    level.color_blue = (0, 0, 1);
     level.color_green = (0, 1, 0);
 
-	if(!isdefined(game["state"]))
+	if(!isDefined(game["state"]))
 		game["state"] = "playing";
 
 	level.mapended = false;
     level.zone.active = false;
     level.startingBattle = false;
     level.battleStarted = false;
+    level.battleOver = false;
+    level.checkingVictoryRoyale = false;
 
     level.healthqueue = [];
 	level.healthqueuecurrent = 0;
@@ -154,7 +157,7 @@ main()
 Callback_StartGameType()
 {
     //View Map menu
-    if(!isdefined(game["layoutimage"]))
+    if(!isDefined(game["layoutimage"]))
 		game["layoutimage"] = "default";
 	layoutname = "levelshots/layouts/hud@layout_" + game["layoutimage"];
 	precacheShader(layoutname);
@@ -225,7 +228,7 @@ Callback_StartGameType()
 	setClientNameMode("auto_change");
 
     //Hide messages from non-living players to alive players
-    if (getCvar("x_deadchat") == "0")
+    if(getCvar("x_deadchat") == "0")
     {
         level.specHud = newTeamHudElem("spectator");
         level.specHud.x = 5;
@@ -243,16 +246,16 @@ Callback_StartGameType()
     zone = "start";
     for(i = 0; i < level.zone.modes.size; i++)
 	{
-		if (isDefined(level.zone.modes[i]) && isDefined(level.zone.modes[i]["name"]))
+		if(isDefined(level.zone.modes[i]) && isDefined(level.zone.modes[i]["name"]))
 		{
-			if (zone == level.zone.modes[i]["name"])
+			if(zone == level.zone.modes[i]["name"])
 			{
 				zoneModeIndex = i;
 				break;
 			}
 		}
 	}
-	if (!isDefined(zoneModeIndex))
+	if(!isDefined(zoneModeIndex))
 	{
         printLn("### Zone mode unrecognized");
 		return;
@@ -272,6 +275,10 @@ Callback_PlayerConnect()
 	self waittill("begin");
 	self.statusicon = "";
 
+    self.fights = true;
+    self.inPlane = false;
+    self.jumped = false;
+
     self.pers["connected"] = true;
 	iprintln(&"MPSCRIPT_CONNECTED", self);
 	
@@ -287,7 +294,6 @@ Callback_PlayerConnect()
     self setClientCvar("g_scriptMainMenu", game["menu_camouflage"]);
     self setClientCvar("scr_showweapontab", "0");
 	self openMenu(game["menu_camouflage"]);
-    self.pers["team"] = "spectator";
     self.sessionteam = "spectator";
     spawnSpectator();
 
@@ -307,49 +313,41 @@ Callback_PlayerConnect()
             case "german":
             case "russian":
 			case "autoassign":
-				if(response == "autoassign")
-				{
+                if(self.jumped)
+                    break;
+                if(isDefined(self.pers["camouflage"]) && response == self.pers["camouflage"])
+                    break; //SELECTED SAME CAMOUFLAGE
+                if(response == "autoassign")
                     response = level.camouflages[randomInt(level.camouflages.size)];
-				}
 
-                //CHECK SELECTED SAME CAMOUFLAGE
-                if (isdefined(self.pers["camouflage"]) && response == self.pers["camouflage"] && self.sessionstate == "playing")
+                self.fights = true;
+                if(isDefined(self.pers["camouflage"]))
                 {
-                    break;
+                    //Selected another camouflage
+                    self.pers["camouflage"] = response;
+                    model();
                 }
-                //CHECK SELECTED SPECTATE AGAIN
-                if (isdefined(self.pers["team"]) && response == self.pers["team"])
+                else
                 {
-                    break;
+                    self.pers["camouflage"] = response;
+
+                    self setClientCvar("scr_showweapontab", "1");
+                    self setClientCvar("g_scriptMainMenu", game["menu_weapon_all"]);
+                    self openMenu(game["menu_weapon_all"]);
                 }
-                //CHECK CHANGED CAMOUFLAGE WHILE PLAYING
-                if (isdefined(self.pers["camouflage"]) && response != self.pers["camouflage"] && self.sessionstate == "playing")
-                {
-                    self suicide();
-                }
-
-				self.pers["camouflage"] = response;
-				self.pers["weapon"] = undefined;
-				self.pers["savedmodel"] = undefined;
-
-				self setClientCvar("scr_showweapontab", "1");
-
-                self setClientCvar("g_scriptMainMenu", game["menu_weapon_all"]);
-                self openMenu(game["menu_weapon_all"]);
 				break;
 
 			case "spectator":
-				if(self.pers["team"] != "spectator")
-				{
-					self.pers["team"] = "spectator";
-					self.pers["weapon"] = undefined;
-					self.pers["savedmodel"] = undefined;
-
-					self.sessionteam = "spectator";
+                self.fights = false;
+                if(isDefined(self.pers["camouflage"]))
+                {
+                    self.pers["weapon"] = undefined;
+                    self.pers["camouflage"] = undefined;
+                    self.sessionteam = "spectator";
 					self setClientCvar("g_scriptMainMenu", game["menu_camouflage"]);
 					self setClientCvar("scr_showweapontab", "0");
 					spawnSpectator();
-				}
+                }
 				break;
 
 			case "weapon":
@@ -363,7 +361,7 @@ Callback_PlayerConnect()
 		}
 		else if(menu == game["menu_weapon_all"])
 		{
-			if(response == "camouflage")
+            if(response == "camouflage")
 			{
 				self openMenu(game["menu_camouflage"]);
 				continue;
@@ -373,26 +371,39 @@ Callback_PlayerConnect()
 				self openMenu(game["menu_viewmap"]);
 				continue;
 			}
-
-			if(!isdefined(self.pers["camouflage"]))
+			if(!isDefined(self.pers["camouflage"]))
 				continue;
-				
-			weapon = response;
+			if(self.jumped)
+                break;
+            
+            weapon = response; //TODO: check if should verify the weapon is allowed
+			if(isDefined(self.pers["weapon"]) && self.pers["weapon"] == weapon)
+				continue; //Selected same weapon
 
-			if(isdefined(self.pers["weapon"]) && self.pers["weapon"] == weapon)
-				continue;
-
-            if(!isdefined(self.pers["weapon"]))
-			{
-				self.pers["weapon"] = weapon;
-				spawnPlayer();
-			}
+            if(isDefined(self.pers["weapon"]))
+            {
+                //Selected another weapon
+                self.pers["weapon"] = weapon;
+                if(!self.inPlane)
+                {
+                    self takeWeapon(self getWeaponSlotWeapon("primary"));
+                    self giveWeapon(self.pers["weapon"]);
+                    self giveMaxAmmo(self.pers["weapon"]);
+                    self setSpawnWeapon(self.pers["weapon"]);
+                    self switchToWeapon(self.pers["weapon"]);
+                }
+            }
+            else
+            {
+                self.pers["weapon"] = weapon;
+                spawnPlayer();
+            }
 		}
         else if(menu == game["menu_viewmap"])
 		{
 			switch(response)
 			{
-			case "team":
+			case "camouflage":
 				self openMenu(game["menu_camouflage"]);
 				continue;
 
@@ -413,11 +424,14 @@ Callback_PlayerDisconnect()
 {
 	iprintln(&"MPSCRIPT_DISCONNECTED", self);
     self notify("death");
+    level thread checkVictoryRoyale();
 }
 Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc)
 {
     if(self.sessionteam == "spectator")
 		return;
+    if(level.battleOver)
+        return;
 
 	// Don't do knockback if the damage direction was not specified
 	if(!isDefined(vDir))
@@ -431,11 +445,11 @@ Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sW
     {
         if(sMeansOfDeath != "MOD_FALL" && sMeansOfDeath != "MOD_MELEE")
         {
-            if (isBoltWeapon(sWeapon)) {
+            if(isBoltWeapon(sWeapon)) {
                 if(level.instantKill_bolt)
                     iDamage = iDamage + 100;
             }
-            else if (isSecondaryWeapon(sWeapon)) {
+            else if(isSecondaryWeapon(sWeapon)) {
                 if(level.instantKill_pistol)
                     iDamage = iDamage + 100;
             }
@@ -449,7 +463,10 @@ Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sW
             eAttacker thread showDamageFeedback();
     }
 
-    if ((self.health - iDamage) <= 0)
+    if(!level.battleStarted)
+        return;
+
+    if((self.health - iDamage) <= 0)
     {
         // Player will die
         // Make the player drop his weapons
@@ -472,6 +489,7 @@ Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sW
 }
 Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc)
 {
+    level thread checkVictoryRoyale();
 	self endon("spawned");
 
 	if(self.sessionteam == "spectator")
@@ -497,19 +515,17 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 		if(attacker == self) // killed himself
 		{
 			doKillcam = false;
-
 			attacker.score = attacker.pers["score"];
 		}
 		else
 		{
 			attackerNum = attacker getEntityNumber();
 			doKillcam = true;
-
 			attacker.pers["score"]++;
 			attacker.score = attacker.pers["score"];
 		}
 	}
-	else // If you weren't killed by a player, you were in the wrong place at the wrong time
+	else
 	{
 		doKillcam = false;
 	}
@@ -520,34 +536,41 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 
 	delay = 2;	// Delay the player becoming a spectator till after he's done dying
 	wait delay;	// ?? Also required for Callback_PlayerKilled to complete before killcam can execute
-
-	if(doKillcam)
-		self thread killcam(attackerNum, delay);
+    
+    if(doKillcam)
+    {
+        self thread killcam(attackerNum, delay);
+    }
 	else
 	{
 		currentorigin = self.origin;
 		currentangles = self getPlayerAngles();
-		self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles);
+		self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles, true);
 	}
 }
 //CALLBACKS END
 
-spawnSpectator(origin, angles)
+spawnSpectator(origin, angles, died)
 {
     printLn("#### spawnSpectator");
 
 	self notify("spawned");
+    self notify("spawned_spectator");
+
+    level thread checkVictoryRoyale();
 	
 	resettimeout();
 
-    if (self.sessionstate != "dead")
+    if(!isDefined(died))
+    {
         self.statusicon = "";
-    self.sessionteam = "spectator";
-	self.sessionstate = "spectator";
-	self.spectatorclient = -1;
-	self.archivetime = 0;
+        self.sessionteam = "spectator";
+    }
+    self.sessionstate = "spectator";
+    self.spectatorclient = -1;
+    self.archivetime = 0;
 
-	if(isdefined(origin) && isdefined(angles))
+	if(isDefined(origin) && isDefined(angles))
 		self spawn(origin, angles);
 	else
 	{
@@ -569,7 +592,7 @@ spawnPlayer(origin, angles)
 	self.spectatorclient = -1;
 	self.archivetime = 0;
 
-    if(isdefined(origin) && isdefined(angles))
+    if(isDefined(origin) && isDefined(angles))
     {
         self spawn(origin, angles);
     }
@@ -579,7 +602,7 @@ spawnPlayer(origin, angles)
         spawnpoints = getentarray(spawnpointname, "classname");
         spawnpoint = maps\mp\gametypes\_spawnlogic::getSpawnpoint_DM(spawnpoints);
 
-        if(isdefined(spawnpoint))
+        if(isDefined(spawnpoint))
             self spawn(spawnpoint.origin, spawnpoint.angles);
         else
             maps\mp\_utility::error("NO " + spawnpointname + " SPAWNPOINTS IN MAP");
@@ -591,25 +614,19 @@ spawnPlayer(origin, angles)
 
     self.pers["score"] = 0;
 	self.score = self.pers["score"];
+    self.deaths = 0;
 
-    if(!isdefined(self.pers["savedmodel"]))
-		model();
-	else
-		maps\mp\_utility::loadModel(self.pers["savedmodel"]);
+    model();
 
-
-    if (!isDefined(self.willLand))
+    if(!self.inPlane)
     {
         loadout();
         self giveWeapon(self.pers["weapon"]);
         self giveMaxAmmo(self.pers["weapon"]);
         self setSpawnWeapon(self.pers["weapon"]);
     }
-
-    if (level.battleStarted)
-        self thread checkPlayerInZone();
-	
-	self setClientCvar("cg_objectiveText", level.objectiveText);
+    
+    self setClientCvar("cg_objectiveText", level.objectiveText);
 }
 
 checkBattleReady()
@@ -626,7 +643,7 @@ checkBattleReady()
 	level.hud_waitingBackground.y = 20;
     level.hud_waitingBackground.alpha = 0.6;
     level.hud_waitingBackground.sort = -1;
-    level.hud_waitingBackground setShader("black", 360, 65);
+    level.hud_waitingBackground setShader("black", 365, 66);
 
 	level.hud_waitingForPlayers = newHudElem();
 	level.hud_waitingForPlayers.alignX = "center";
@@ -642,7 +659,7 @@ checkBattleReady()
     level.hud_playersReady.alignX = "center";
     level.hud_playersReady.alignY = "middle";
 	level.hud_playersReady.x = level.hud_waitingForPlayers.x - distance_ready_min;
-	level.hud_playersReady.y = level.hud_waitingForPlayers.y + 23;
+	level.hud_playersReady.y = level.hud_waitingForPlayers.y + 24;
 	level.hud_playersReady.fontScale = fontScale_playerCount;
     level.hud_playersReady.font = "bigfixed";
     
@@ -658,7 +675,7 @@ checkBattleReady()
 
 	for(;;)
 	{
-        numberOfConnectedPlayers = [];
+        numberOfReadyPlayers = [];
 		for(i = 0; i < level.maxClients; i++)
 		{
 			player = getEntByNum(i);
@@ -667,15 +684,16 @@ checkBattleReady()
 				if(isDefined(player.pers["connected"]))
 				{
 					//PLAYER IS CONNECTED
-					numberOfConnectedPlayers[numberOfConnectedPlayers.size] = player;
+                    if(player.fights)
+                        numberOfReadyPlayers[numberOfReadyPlayers.size] = player;
 				}
 			}
 		}
-        level.hud_playersReady setValue(numberOfConnectedPlayers.size);
+        level.hud_playersReady setValue(numberOfReadyPlayers.size);
 
-		if(numberOfConnectedPlayers.size > 0) //AT LEAST 1 READY PLAYER
+		if(numberOfReadyPlayers.size > 0) //AT LEAST 1 READY PLAYER
 		{
-			if(numberOfConnectedPlayers.size < level.minPlayers) //MIN PLAYERS NOT REACHED YET
+			if(numberOfReadyPlayers.size < level.minPlayers) //MIN PLAYERS NOT REACHED YET
 			{
 				if(level.startingBattle) //Lost required players count, reset
 				{
@@ -695,14 +713,12 @@ checkBattleReady()
 				}
                 level.hud_waitingForPlayers setText(&"WAITING FOR PLAYERS");
 			}
-			else if(numberOfConnectedPlayers.size >= level.minPlayers) //MIN PLAYERS REACHED, START COUNTDOWN
+			else if(numberOfReadyPlayers.size >= level.minPlayers) //MIN PLAYERS REACHED, START COUNTDOWN
 			{
-				if(numberOfConnectedPlayers.size <= level.maxClients && !level.startingBattle)
+				if(numberOfReadyPlayers.size <= level.maxClients && !level.startingBattle)
 				{
-                    level.hud_playersReady.color = level.color_green;
-                    level.hud_playersMin.color = level.color_green;
-
-					level.hud_waitingForPlayers setText(&"");
+                    level.hud_waitingForPlayers setText(&"");
+                    level.hud_waitingForPlayers.color = level.color_red;
                     level.hud_waitingForPlayers.label = &"BATTLE STARTING: ";
 					level.hud_waitingForPlayers setTimer(level.startBattleCountdown);
                     thread startBattle();
@@ -727,8 +743,15 @@ startBattle()
     level.hud_waitingForPlayers destroy();
     level.hud_playersReady destroy();
     level.hud_playersMin destroy();
-    
 
+
+
+
+    level.hud_numLivingPlayers = newHudElem();
+    level.hud_numLivingPlayers.x = 570;
+	level.hud_numLivingPlayers.y = 80;
+    level.hud_numLivingPlayers.label = &"Alive: ";
+    thread updateNumLivingPlayers();
 
 
 
@@ -738,22 +761,21 @@ startBattle()
     zone = "start_1";
     for(i = 0; i < level.zone.modes.size; i++)
 	{
-		if (isDefined(level.zone.modes[i]) && isDefined(level.zone.modes[i]["name"]))
+		if(isDefined(level.zone.modes[i]) && isDefined(level.zone.modes[i]["name"]))
 		{
-			if (zone == level.zone.modes[i]["name"])
+			if(zone == level.zone.modes[i]["name"])
 			{
 				zoneModeIndex = i;
 				break;
 			}
 		}
 	}
-	if (!isDefined(zoneModeIndex))
+	if(!isDefined(zoneModeIndex))
 	{
         printLn("### Zone mode unrecognized");
 		return;
 	}
 	setupZone(zoneModeIndex);
-    
 
 
 
@@ -789,17 +811,18 @@ startBattle()
 	{
 		player = players[i];
 
-        player.willLand = true;
+        player.inPlane = true;
         player closeMenu();
 
-        if (!isDefined(player.pers["camouflage"]))
+        if(!isDefined(player.pers["camouflage"]))
             player.pers["camouflage"] = level.camouflages[randomInt(level.camouflages.size)];
-        if (!isDefined(player.pers["weapon"]))
+        if(!isDefined(player.pers["weapon"]))
             player.pers["weapon"] = "mosin_nagant_mp";
 
         player spawnPlayer(originPlanePov, anglesPlanePov);
-        player showToPlayer(player); //TODO: use an invisible model instead
+        player showToPlayer(player); //TODO: use an invisible/no model instead
         player linkto(level.planePov);
+        player thread checkPlayerInZone();
         player thread checkPlayerJumped();
     }
     level.plane moveY(moveDistance, moveDelay);
@@ -810,7 +833,7 @@ startBattle()
     for(i = 0; i < players.size; i++)
 	{
 		player = players[i];
-        if (isAlive(player) && !isDefined(player.jumped))
+        if(isAlive(player) && !isDefined(player.jumped))
         {
             player.forceJump = true;
         }
@@ -826,15 +849,15 @@ setupZone(zoneModeIndex)
 {
 	for(i = 0; i < level.zone.modes[zoneModeIndex]["name"].size; i++)
 	{
-		if (level.zone.modes[zoneModeIndex]["name"][i] == "_")
+		if(level.zone.modes[zoneModeIndex]["name"][i] == "_")
 		{
 			modeIsTransition = true;
 			break;
 		}
     }
-	if (!isDefined(modeIsTransition)) //STATIC ZONE
+	if(!isDefined(modeIsTransition)) //STATIC ZONE
 	{
-		if (level.zone.active) //TODO: remove after tests
+		if(level.zone.active) //TODO: remove after tests
 		{
             printLn("### Static zone already active");
 			return;
@@ -862,7 +885,7 @@ setupZone(zoneModeIndex)
 }
 playZone(fx, static)
 {
-	if (static)
+	if(static)
 	{
 		level.zoneLooper = playLoopedFX(fx, (self.life / 1000), self.origin);
 	}
@@ -870,7 +893,7 @@ playZone(fx, static)
 	{
         wait 0.5; //.05 was not enough
         playFXOnTag(fx, self, self.modelTag);
-		if (self.indexMode != level.zone.modes.size - 1) //FINAL FULL SHRINKS DOESNT PLAY NEXT
+		if(self.indexMode != level.zone.modes.size - 1) //FINAL FULL SHRINKS DOESNT PLAY NEXT
 		{
 			wait (self.life / 1000);
 			//PLAY NEXT STATIC ZONE
@@ -908,12 +931,15 @@ moveZone()
 checkPlayerInZone()
 {
     self endon("death");
+    self endon("spawned_spectator");
 
-    self.hudInStorm = newClientHudElem(self);
-    self.hudInStorm.x = 0;
-    self.hudInStorm.y = 0;
-    self.hudInStorm setShader("black", 640, 480);
-    self.hudInStorm.alpha = 0;
+    self.inZone = true;
+
+    self.hudInStormDarkness = newClientHudElem(self);
+    self.hudInStormDarkness.x = 0;
+    self.hudInStormDarkness.y = 0;
+    self.hudInStormDarkness setShader("black", 640, 480);
+    self.hudInStormDarkness.alpha = 0;
 
     self.hudInStormAlert = newClientHudElem(self);
     self.hudInStormAlert.x = 460;
@@ -923,7 +949,7 @@ checkPlayerInZone()
 
 	for(;;)
 	{
-		if (level.zone.active)
+        if(level.zone.active)
 		{
             //IGNORE Z
 			selfOriginX = self.origin[0];
@@ -933,24 +959,30 @@ checkPlayerInZone()
 			zoneOriginX = level.zone.origin[0];
 			zoneOriginY = level.zone.origin[1];
 			zoneOriginNoZ = (zoneOriginX, zoneOriginY, 0);
-			
-			if (distance(selfOriginNoZ, zoneOriginNoZ) < level.zone.currentSize)
+
+            inZone = (distance(selfOriginNoZ, zoneOriginNoZ) < level.zone.currentSize);
+			if(inZone && !self.inZone)
 			{
-				//IN ZONE
-                self.hudInStorm.alpha = 0;
+                //ENTERED ZONE
+                self.inZone = true;
+                self.hudInStormDarkness.alpha = 0;
                 self.hudInStormAlert setText(&"");
 			}
-			else
+			else if(!inZone)
 			{
-				//IN STORM
-                self.hudInStorm.alpha = 0.3;
-				self.hudInStormAlert setText(&"You are in the storm!");
+                if(self.inZone)
+                {
+                    //ENTERED STORM
+                    self.inZone = false;
+                    self.hudInStormDarkness.alpha = 0.3;
+                    self.hudInStormAlert setText(&"You are in the storm!");
+                }
 
 				damagePlayer = false;
-				if (isDefined(self.lastZoneDamageTime))
+				if(isDefined(self.lastZoneDamageTime))
 				{
 					secondsPassed = (getTime() - self.lastZoneDamageTime) / 1000;
-					if (secondsPassed > 2)
+					if(secondsPassed > 2)
 					{
 						damagePlayer = true;
 					}
@@ -960,7 +992,7 @@ checkPlayerInZone()
 					damagePlayer = true;
 				}
 
-				if (damagePlayer)
+				if(damagePlayer)
 				{
                     eInflictor = level.zone;
                     eAttacker = level.zone;
@@ -986,6 +1018,9 @@ checkPlayerInZone()
 //SKYDIVE FUNCTIONS
 checkPlayerJumped()
 {
+    self endon("death");
+    self endon("spawned_spectator");
+
     self.hud_jump_parachute = newClientHudElem(self);
     self.hud_jump_parachute.alignX = "center";
     self.hud_jump_parachute.alignY = "middle";
@@ -996,13 +1031,18 @@ checkPlayerJumped()
 
 	for(;;)
 	{
-		if (self useButtonPressed() || isDefined(self.forceJump)) //TODO: prevent forceJump players stuck in each other
+		if(self useButtonPressed() || isDefined(self.forceJump)) //TODO: prevent forceJump players stuck in each other
 		{
             self.jumped = true;
+
+            self setClientCvar("g_scriptMainMenu", game["menu_camouflage"]);
+			self setClientCvar("scr_showweapontab", "0");
+
             self.hud_jump_parachute setText(&"");
 
 			anglesBeforeSpawn = self getPlayerAngles();
             self spawnPlayer(level.planePov.origin, anglesBeforeSpawn);
+            self.inPlane = false;
             self showToPlayer(undefined);
 			//self setClientCvar("cg_thirdPerson", "1"); //TODO: remove after tests
 
@@ -1029,6 +1069,7 @@ checkPlayerJumped()
 checkReleasedUseButton()
 {
     self endon("death");
+    self endon("spawned_spectator");
     self endon("landed");
 
     while(self useButtonPressed())
@@ -1038,6 +1079,7 @@ checkReleasedUseButton()
 checkPlayerDive()
 {
     self endon("death");
+    self endon("spawned_spectator");
     self endon("landed");
 
     self thread checkLanded();
@@ -1084,22 +1126,22 @@ checkPlayerDive()
         goingBackward = false;
         goingLeft = false;
         goingRight = false;
-        if (self forwardButtonPressed())
+        if(self forwardButtonPressed())
             goingForward = true;
-        if (self backButtonPressed())
+        if(self backButtonPressed())
             goingBackward = true;
-        if (self leftButtonPressed())
+        if(self leftButtonPressed())
             goingLeft = true;
-        if (self rightButtonPressed())
+        if(self rightButtonPressed())
             goingRight = true;
 
-        if (goingLeft && goingRight)
+        if(goingLeft && goingRight)
         {
             //left + right = neither
             goingLeft = false;
             goingRight = false;
         }
-        if (goingForward && goingBackward)
+        if(goingForward && goingBackward)
         {
             //forward + backward = neither
             goingForward = false;
@@ -1108,15 +1150,15 @@ checkPlayerDive()
 
         //PARACHUTE STATE CHECK
         checkParachute = false;
-        if (self useButtonPressed() && !self.blockParachuteCheck)
+        if(self useButtonPressed() && !self.blockParachuteCheck)
         {
             self.blockParachuteCheck = true;
             self thread checkReleasedUseButton();
             checkParachute = true;
         }
-        if (checkParachute)
+        if(checkParachute)
         {
-            if (!self.parachuteEnabled)
+            if(!self.parachuteEnabled)
             {
                 //OPENED
                 self.hud_parachuteStateIndicator.color = level.color_green;
@@ -1144,21 +1186,21 @@ checkPlayerDive()
         //printLn("### angles[0] = " + angles[0]);
         isLookingUp = false;
         isLookingDown = false;
-        if (angles[0] < -30)
+        if(angles[0] < -30)
         {
             isLookingUp = true;
         }
-        else if (angles[0] > 30)
+        else if(angles[0] > 30)
         {
             isLookingDown = true;
         }
         
         //APPLY MOTION EFFECTS
-        if (self.parachuteEnabled)
+        if(self.parachuteEnabled)
         {
-            if (goingForward)
+            if(goingForward)
             {
-                if (isLookingUp) //Prevent acceleration from pushing upward
+                if(isLookingUp) //Prevent acceleration from pushing upward
                 {
                     //AS IDLE
                     newVelocity_x = velocity[0];
@@ -1166,14 +1208,14 @@ checkPlayerDive()
                     newVelocity_z = velocity[2];
                     newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_idle);
                 }
-                else if (goingLeft)
+                else if(goingLeft)
                 {
                     newVelocity_x = velocity[0] + (forwardDirection[0] + leftDirection[0]) * acceleration_parachute_forwardLeftRight;
                     newVelocity_y = velocity[1] + (forwardDirection[1] + leftDirection[1]) * acceleration_parachute_forwardLeftRight;
                     newVelocity_z = velocity[2] + (forwardDirection[2] + leftDirection[2]) * acceleration_parachute_forwardLeftRight;
                     newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
                 }
-                else if (goingRight)
+                else if(goingRight)
                 {
                     newVelocity_x = velocity[0] + (forwardDirection[0] + rightDirection[0]) * acceleration_parachute_forwardLeftRight;
                     newVelocity_y = velocity[1] + (forwardDirection[1] + rightDirection[1]) * acceleration_parachute_forwardLeftRight;
@@ -1189,9 +1231,9 @@ checkPlayerDive()
                     newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
                 }
             }
-            else if (goingBackward)
+            else if(goingBackward)
             {
-                if (isLookingDown) //Prevent acceleration from pushing upward
+                if(isLookingDown) //Prevent acceleration from pushing upward
                 {
                     //AS IDLE
                     newVelocity_x = velocity[0];
@@ -1199,14 +1241,14 @@ checkPlayerDive()
                     newVelocity_z = velocity[2];
                     newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_idle);
                 }
-                else if (goingLeft)
+                else if(goingLeft)
                 {
                     newVelocity_x = velocity[0] + (backwardDirection[0] + leftDirection[0]) * acceleration_parachute_backwardLeftRight;
                     newVelocity_y = velocity[1] + (backwardDirection[1] + leftDirection[1]) * acceleration_parachute_backwardLeftRight;
                     newVelocity_z = velocity[2] + (backwardDirection[2] + leftDirection[2]) * acceleration_parachute_backwardLeftRight;
                     newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
                 }
-                else if (goingRight)
+                else if(goingRight)
                 {
                     newVelocity_x = velocity[0] + (backwardDirection[0] + rightDirection[0]) * acceleration_parachute_backwardLeftRight;
                     newVelocity_y = velocity[1] + (backwardDirection[1] + rightDirection[1]) * acceleration_parachute_backwardLeftRight;
@@ -1222,7 +1264,7 @@ checkPlayerDive()
                     newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
                 }
             }
-            else if (goingLeft)
+            else if(goingLeft)
             {
                 //JUST LEFT
                 newVelocity_x = velocity[0] + leftDirection[0] * acceleration_parachute_onlyLeftRight;
@@ -1230,7 +1272,7 @@ checkPlayerDive()
                 newVelocity_z = velocity[2] + leftDirection[2] * acceleration_parachute_onlyLeftRight;
                 newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_parachute_forward);
             }
-            else if (goingRight)
+            else if(goingRight)
             {
                 //JUST RIGHT
                 newVelocity_x = velocity[0] + rightDirection[0] * acceleration_parachute_onlyLeftRight;
@@ -1249,9 +1291,9 @@ checkPlayerDive()
         }
         else //PARACHUTE DISABLED
         {
-            if (goingForward)
+            if(goingForward)
             {
-                if (isLookingUp) //Prevent acceleration from pushing upward
+                if(isLookingUp) //Prevent acceleration from pushing upward
                 {
                     //AS IDLE
                     newVelocity_x = velocity[0];
@@ -1259,14 +1301,14 @@ checkPlayerDive()
                     newVelocity_z = velocity[2];
                     newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_idle);
                 }
-                else if (goingLeft)
+                else if(goingLeft)
                 {
                     newVelocity_x = velocity[0] + (forwardDirection[0] + leftDirection[0]) * acceleration_skydive_forwardLeftRight;
                     newVelocity_y = velocity[1] + (forwardDirection[1] + leftDirection[1]) * acceleration_skydive_forwardLeftRight;
                     newVelocity_z = velocity[2] + (forwardDirection[2] + leftDirection[2]) * acceleration_skydive_forwardLeftRight;
                     newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_forward);
                 }
-                else if (goingRight)
+                else if(goingRight)
                 {
                     newVelocity_x = velocity[0] + (forwardDirection[0] + rightDirection[0]) * acceleration_skydive_forwardLeftRight;
                     newVelocity_y = velocity[1] + (forwardDirection[1] + rightDirection[1]) * acceleration_skydive_forwardLeftRight;
@@ -1282,7 +1324,7 @@ checkPlayerDive()
                     newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_forward);
                 }
             }
-            else if (goingLeft)
+            else if(goingLeft)
             {
                 //JUST LEFT
                 newVelocity_x = velocity[0] + leftDirection[0] * acceleration_skydive_onlyLeftRight;
@@ -1290,7 +1332,7 @@ checkPlayerDive()
                 newVelocity_z = velocity[2] + leftDirection[2] * acceleration_skydive_onlyLeftRight;
                 newVelocity = maps\mp\_utility::vectorScale((newVelocity_x, newVelocity_y, newVelocity_z), airResistance_skydive_forward);
             }
-            else if (goingRight)
+            else if(goingRight)
             {
                 //JUST RIGHT
                 newVelocity_x = velocity[0] + rightDirection[0] * acceleration_skydive_onlyLeftRight;
@@ -1316,18 +1358,25 @@ checkPlayerDive()
 checkLanded()
 {
     self endon("death");
+    self endon("spawned_spectator");
     
 	for(;;)
 	{
-		if (self isOnGround())
+		if(self isOnGround())
 		{
 			self notify("landed");
-            self.willLand = false;
 
             self.hud_jump_parachute destroy();
             self.hud_parachuteStateIndicator destroy();
 
-            if (self.parachuteEnabled)
+            //Check landed under map
+            if(self.origin[2] < -600)
+            {
+                self suicide();
+                return;
+            }
+
+            if(self.parachuteEnabled)
             {
                 self detach(level.model_parachute, "tag_belt_back");
                 self.parachuteEnabled = false;
@@ -1346,6 +1395,82 @@ checkLanded()
 	}
 }
 //SKYDIVE FUNCTIONS END
+
+
+
+
+updateNumLivingPlayers()
+{
+    for(;;)
+	{
+        alivePlayers = 0;
+        players = getEntArray("player", "classname");
+        for(i = 0; i < players.size; i++)
+        {
+            player = players[i];
+            if(isAlive(player) && player.sessionstate != "spectator")
+            {
+                alivePlayers += 1;
+            }
+        }
+        level.hud_numLivingPlayers setValue(alivePlayers);
+
+        wait .5;
+        wait .05;
+	}
+}
+checkVictoryRoyale()
+{
+    if (!level.battleStarted || level.battleOver)
+        return;
+    if(level.checkingVictoryRoyale)
+        return;
+
+    level.checkingVictoryRoyale = true;
+
+    alivePlayers = [];
+    players = getEntArray("player", "classname");
+    for(i = 0; i < players.size; i++)
+    {
+        player = players[i];
+        if(isAlive(player) && player.sessionstate != "spectator")
+        {
+            alivePlayers[alivePlayers.size] = player;
+        }
+    }
+    if(alivePlayers.size == 1)
+    {
+        level.battleOver = true;
+
+        winner = alivePlayers[0];
+        winner.hud_victoryRoyale = newClientHudElem(winner);
+        winner.hud_victoryRoyale.archived = false;
+        winner.hud_victoryRoyale.alignX = "center";
+        winner.hud_victoryRoyale.alignY = "middle";
+        winner.hud_victoryRoyale.x = 320;
+        winner.hud_victoryRoyale.y = 100;
+        winner.hud_victoryRoyale.color = level.color_blue;
+        winner.hud_victoryRoyale.fontScale = 1.5;
+        winner.hud_victoryRoyale.font = "bigfixed";
+        winner.hud_victoryRoyale setText(&"VICTORY ROYALE!");
+
+        setCvar("timescale", "0.5");
+        wait 0.25;
+        for(x = .5; x < 1; x+= .05)
+        {
+            wait (0.1 / x);
+            setCvar("timescale", x);
+        }
+        //timescale = getCvar("timescale");
+        //printLn("### timescale = " + timescale);
+        setCvar("timescale", "1");
+    }
+
+    level.checkingVictoryRoyale = false;
+}
+
+
+
 
 showDamageFeedback()
 {
@@ -1396,7 +1521,7 @@ killcam(attackerNum, delay)
 
 	self.killcam = true;
 
-	if(!isdefined(self.kc_topbar))
+	if(!isDefined(self.kc_topbar))
 	{
 		self.kc_topbar = newClientHudElem(self);
 		self.kc_topbar.archived = false;
@@ -1405,7 +1530,7 @@ killcam(attackerNum, delay)
 		self.kc_topbar.alpha = 0.5;
 		self.kc_topbar setShader("black", 640, 112);
 	}
-	if(!isdefined(self.kc_bottombar))
+	if(!isDefined(self.kc_bottombar))
 	{
 		self.kc_bottombar = newClientHudElem(self);
 		self.kc_bottombar.archived = false;
@@ -1414,7 +1539,7 @@ killcam(attackerNum, delay)
 		self.kc_bottombar.alpha = 0.5;
 		self.kc_bottombar setShader("black", 640, 112);
 	}
-	if(!isdefined(self.kc_title))
+	if(!isDefined(self.kc_title))
 	{
 		self.kc_title = newClientHudElem(self);
 		self.kc_title.archived = false;
@@ -1426,7 +1551,7 @@ killcam(attackerNum, delay)
 		self.kc_title.fontScale = 2.5;
 	}
 	self.kc_title setText(&"MPSCRIPT_KILLCAM");
-	if(!isdefined(self.kc_skiptext))
+	if(!isDefined(self.kc_skiptext))
 	{
 		self.kc_skiptext = newClientHudElem(self);
 		self.kc_skiptext.archived = false;
@@ -1450,7 +1575,7 @@ killcam(attackerNum, delay)
 
     currentorigin = self.origin;
 	currentangles = self getPlayerAngles();
-	self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles);
+	self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles, true);
 }
 waitKillcamTime()
 {
@@ -1473,13 +1598,13 @@ waitSkipKillcamButton()
 }
 removeKillcamElements()
 {
-	if(isdefined(self.kc_topbar))
+	if(isDefined(self.kc_topbar))
 		self.kc_topbar destroy();
-	if(isdefined(self.kc_bottombar))
+	if(isDefined(self.kc_bottombar))
 		self.kc_bottombar destroy();
-	if(isdefined(self.kc_title))
+	if(isDefined(self.kc_title))
 		self.kc_title destroy();
-	if(isdefined(self.kc_skiptext))
+	if(isDefined(self.kc_skiptext))
 		self.kc_skiptext destroy();
 }
 //KILLCAM FUNCTIONS END
@@ -1487,7 +1612,7 @@ removeKillcamElements()
 //VSAY
 quickcommands(response)
 {
-	if(!isdefined(self.pers["camouflage"]) || self.pers["team"] == "spectator" || isdefined(self.spamdelay))
+	if(!isDefined(self.pers["camouflage"]) || isDefined(self.spamdelay))
 		return;
 
 	self.spamdelay = true;
@@ -1736,7 +1861,7 @@ quickcommands(response)
 }
 quickstatements(response)
 {
-	if(!isdefined(self.pers["camouflage"]) || self.pers["team"] == "spectator" || isdefined(self.spamdelay))
+	if(!isDefined(self.pers["camouflage"]) || isDefined(self.spamdelay))
 		return;
 
 	self.spamdelay = true;
@@ -1965,7 +2090,7 @@ quickstatements(response)
 }
 quickresponses(response)
 {
-	if(!isdefined(self.pers["camouflage"]) || self.pers["team"] == "spectator" || isdefined(self.spamdelay))
+	if(!isDefined(self.pers["camouflage"]) || isDefined(self.spamdelay))
 		return;
 
 	self.spamdelay = true;
@@ -2197,7 +2322,6 @@ model()
 {
 	self detachAll();
 	[[game[self.pers["camouflage"] + "_model"] ]]();
-	self.pers["savedmodel"] = maps\mp\_utility::saveModel();
 }
 
 isBoltWeapon(sWeapon)
@@ -2260,7 +2384,7 @@ loadout()
 
 dropHealth()
 {
-	if(isdefined(level.healthqueue[level.healthqueuecurrent]))
+	if(isDefined(level.healthqueue[level.healthqueuecurrent]))
 		level.healthqueue[level.healthqueuecurrent] delete();
 	
 	level.healthqueue[level.healthqueuecurrent] = spawn("item_health", self.origin + (0, 0, 1));
