@@ -10,8 +10,11 @@ main()
 
     level.objectiveText = "Be the last man standing.";
     level.maxClients = getCvarInt("sv_maxclients");
+    level.text_waitingPlayers = &"WAITING FOR PLAYERS";
     level.text_parachuteDeployed = &"PARACHUTE DEPLOYED";
     level.text_parachuteNotDeployed = &"PARACHUTE NOT DEPLOYED";
+    level.text_zoneIsShrinking = &"ZONE SHRINKING ";
+    level.text_zoneWillShrink = &"ZONE SHRINKS IN ";
 
     level.minPlayers = 20;
     if(getCvarInt("br_minPlayers")) {
@@ -42,6 +45,14 @@ main()
         level.damageFeedback = false;
     }
 
+
+
+
+    level.zoneDuration = 5;
+
+
+
+
     //MODEL PATHS
     level.model_zone = "xmodel/playerhead_default"; //TODO: create an invisible model instead
     level.model_plane = "xmodel/c47";
@@ -64,71 +75,71 @@ main()
 
     level.zone.modes = [];
 
-	level.zone.modes[0]["name"] = "start";
+	level.zone.modes[0]["id"] = "start";
     level.zone.modes[0]["fxId"] = loadfx("fx/zone-start.efx");
 	level.zone.modes[0]["startSize"] = "20000";
 
-    level.zone.modes[1]["name"] = "start_1";
+    level.zone.modes[1]["id"] = "start_1";
     level.zone.modes[1]["fxId"] = loadfx("fx/zone-start_1.efx");
     level.zone.modes[1]["life"] = "9500";
 	level.zone.modes[1]["startSize"] = level.zone.modes[1-1]["startSize"];
 	level.zone.modes[1]["endSize"] = "7000";
 
-    level.zone.modes[2]["name"] = "1";
+    level.zone.modes[2]["id"] = "1";
     level.zone.modes[2]["fxId"] = loadfx("fx/zone1.efx");
 	level.zone.modes[2]["startSize"] = level.zone.modes[2-1]["endSize"];
 
-	level.zone.modes[3]["name"] = "1_2";
+	level.zone.modes[3]["id"] = "1_2";
     level.zone.modes[3]["fxId"] = loadfx("fx/zone1_2.efx");
     level.zone.modes[3]["life"] = "6000";
 	level.zone.modes[3]["startSize"] = level.zone.modes[3-1]["startSize"];
 	level.zone.modes[3]["endSize"] = "3800";
 
-    level.zone.modes[4]["name"] = "2";
+    level.zone.modes[4]["id"] = "2";
     level.zone.modes[4]["fxId"] = loadfx("fx/zone2.efx");
 	level.zone.modes[4]["startSize"] = level.zone.modes[4-1]["endSize"];
 
-	level.zone.modes[5]["name"] = "2_3";
+	level.zone.modes[5]["id"] = "2_3";
     level.zone.modes[5]["fxId"] = loadfx("fx/zone2_3.efx");
     level.zone.modes[5]["life"] = "6000";
 	level.zone.modes[5]["startSize"] = level.zone.modes[5-1]["startSize"];
 	level.zone.modes[5]["endSize"] = "2700";
 
-    level.zone.modes[6]["name"] = "3";
+    level.zone.modes[6]["id"] = "3";
     level.zone.modes[6]["fxId"] = loadfx("fx/zone3.efx");
 	level.zone.modes[6]["startSize"] = level.zone.modes[6-1]["endSize"];
 
-    level.zone.modes[7]["name"] = "3_4";
+    level.zone.modes[7]["id"] = "3_4";
     level.zone.modes[7]["fxId"] = loadfx("fx/zone3_4.efx");
     level.zone.modes[7]["life"] = "6000";
 	level.zone.modes[7]["startSize"] = level.zone.modes[7-1]["startSize"];
 	level.zone.modes[7]["endSize"] = "1500";
 
-	level.zone.modes[8]["name"] = "4";
+	level.zone.modes[8]["id"] = "4";
     level.zone.modes[8]["fxId"] = loadfx("fx/zone4.efx");
 	level.zone.modes[8]["startSize"] = level.zone.modes[8-1]["endSize"];
 
-	level.zone.modes[9]["name"] = "4_5";
+	level.zone.modes[9]["id"] = "4_5";
     level.zone.modes[9]["fxId"] = loadfx("fx/zone4_5.efx");
     level.zone.modes[9]["life"] = "6000";
 	level.zone.modes[9]["startSize"] = level.zone.modes[9-1]["startSize"];
 	level.zone.modes[9]["endSize"] = "800";
 
-	level.zone.modes[10]["name"] = "5";
+	level.zone.modes[10]["id"] = "5";
     level.zone.modes[10]["fxId"] = loadfx("fx/zone5.efx");
 	level.zone.modes[10]["startSize"] = level.zone.modes[10-1]["endSize"];
 
-	level.zone.modes[11]["name"] = "5_6";
+	level.zone.modes[11]["id"] = "5_6";
     level.zone.modes[11]["fxId"] = loadfx("fx/zone5_6.efx");
     level.zone.modes[11]["life"] = "6000";
 	level.zone.modes[11]["startSize"] = level.zone.modes[11-1]["startSize"];
 	level.zone.modes[11]["endSize"] = "300";
 
-	level.zone.modes[12]["name"] = "6";
+	level.zone.modes[12]["id"] = "6";
     level.zone.modes[12]["fxId"] = loadfx("fx/zone6.efx");
 	level.zone.modes[12]["startSize"] = level.zone.modes[12-1]["endSize"];
 
-	level.zone.modes[13]["name"] = "6_end";
+	level.zone.modes[13]["id"] = "6_end";
     level.zone.modes[13]["fxId"] = loadfx("fx/zone6_end.efx");
     level.zone.modes[13]["life"] = "6000";
 	level.zone.modes[13]["startSize"] = level.zone.modes[13-1]["startSize"];
@@ -228,31 +239,8 @@ Callback_StartGameType()
 	setClientNameMode("auto_change");
 
     level.zone setModel(level.model_zone);
-    //Starting zone
-    zone = "start";
-    for(i = 0; i < level.zone.modes.size; i++)
-	{
-		if(isDefined(level.zone.modes[i]) && isDefined(level.zone.modes[i]["name"]))
-		{
-			if(zone == level.zone.modes[i]["name"])
-			{
-				zoneModeIndex = i;
-				break;
-			}
-		}
-	}
-	if(!isDefined(zoneModeIndex))
-	{
-        printLn("### Zone mode unrecognized");
-		return;
-	}
-	setupZone(zoneModeIndex);
 
-
-
-
-
-    
+    thread manageZoneLifecycle();
     thread checkBattleReady();
 }
 Callback_PlayerConnect()
@@ -638,6 +626,7 @@ checkBattleReady()
 	level.hud_waitingForPlayers.y = level.hud_waitingBackground.y + 21;
 	level.hud_waitingForPlayers.fontScale = 1.1;
     level.hud_waitingForPlayers.font = "bigfixed";
+    level.hud_waitingForPlayers.label = level.text_waitingPlayers;
 
     distance_ready_min = 15;
 
@@ -686,26 +675,30 @@ checkBattleReady()
                     level notify("battle_cancel");
                     level.startingBattle = false;
 
-                    level.hud_waitingForPlayers destroy();
+                    //Reset HUD
+                    alignX = level.hud_waitingForPlayers.alignX;
+                    alignY = level.hud_waitingForPlayers.alignY;
+                    x = level.hud_waitingForPlayers.x;
+                    y = level.hud_waitingForPlayers.y;
+                    fontScale = level.hud_waitingForPlayers.fontScale;
+                    font = level.hud_waitingForPlayers.font;
 
-                    //Recreate hud because can't clear timer
-                    level.hud_waitingForPlayers = newHudElem();
-                    level.hud_waitingForPlayers.alignX = "center";
-                    level.hud_waitingForPlayers.alignY = "middle";
-                    level.hud_waitingForPlayers.x = 320;
-                    level.hud_waitingForPlayers.y = level.hud_waitingBackground.y + 20;
-                    level.hud_waitingForPlayers.fontScale = 1.1;
-                    level.hud_waitingForPlayers.font = "bigfixed";
+                    level.hud_waitingForPlayers reset();
+                    level.hud_waitingForPlayers.alignX = alignX;
+                    level.hud_waitingForPlayers.alignY = alignY;
+                    level.hud_waitingForPlayers.x = x;
+                    level.hud_waitingForPlayers.y = y;
+                    level.hud_waitingForPlayers.fontScale = fontScale;
+                    level.hud_waitingForPlayers.font = font;
+                    level.hud_waitingForPlayers.label = level.text_waitingPlayers;
 				}
-                level.hud_waitingForPlayers setText(&"WAITING FOR PLAYERS");
 			}
 			else if(numberOfReadyPlayers.size >= level.minPlayers) //MIN PLAYERS REACHED, START COUNTDOWN
 			{
 				if(numberOfReadyPlayers.size <= level.maxClients && !level.startingBattle)
 				{
-                    level.hud_waitingForPlayers setText(&"");
                     level.hud_waitingForPlayers.color = level.color_red;
-                    level.hud_waitingForPlayers.label = &"BATTLE STARTING: ";
+                    level.hud_waitingForPlayers.label = &"BATTLE STARTING ";
 					level.hud_waitingForPlayers setTimer(level.startBattleCountdown);
                     thread startBattle();
 				}
@@ -717,6 +710,8 @@ checkBattleReady()
 }
 startBattle()
 {
+    printLn("#### startBattle");
+
     level endon("battle_cancel");
     level.startingBattle = true;
 	wait level.startBattleCountdown;
@@ -730,46 +725,11 @@ startBattle()
     level.hud_playersReady destroy();
     level.hud_playersMin destroy();
 
-
-
-
     level.hud_numLivingPlayers = newHudElem();
     level.hud_numLivingPlayers.x = 570;
 	level.hud_numLivingPlayers.y = 80;
     level.hud_numLivingPlayers.label = &"Alive: ";
     thread updateNumLivingPlayers();
-
-
-
-
-
-    //Starting zone shrinks
-    zone = "start_1";
-    for(i = 0; i < level.zone.modes.size; i++)
-	{
-		if(isDefined(level.zone.modes[i]) && isDefined(level.zone.modes[i]["name"]))
-		{
-			if(zone == level.zone.modes[i]["name"])
-			{
-				zoneModeIndex = i;
-				break;
-			}
-		}
-	}
-	if(!isDefined(zoneModeIndex))
-	{
-        printLn("### Zone mode unrecognized");
-		return;
-	}
-	setupZone(zoneModeIndex);
-
-
-
-
-
-
-
-
 
     //using map zh_frenzy
 	originPlane = (2050, -18000, 8070);
@@ -845,27 +805,63 @@ startBattle()
 }
 
 //ZONE FUNCTIONS
+manageZoneLifecycle()
+{
+    level.hud_zoneShrinkAlert = newHudElem();
+	level.hud_zoneShrinkAlert.x = 450;
+	level.hud_zoneShrinkAlert.y = 170;
+	level.hud_zoneShrinkAlert.fontScale = 1.1;
+
+    zoneIndex = 0; //Waiting for players
+    thread setupZone(zoneIndex);
+
+    level waittill("battle_start");
+    zoneIndex++; //In plane, start zone is shrinking
+    thread setupZone(zoneIndex);
+
+    for(;;)
+    {
+        level waittill("zone_idle");
+        wait level.zoneDuration;
+
+        zoneIndex += 2;
+        thread setupZone(zoneIndex);
+        
+        wait .05;
+    }
+}
 setupZone(zoneModeIndex)
 {
-	for(i = 0; i < level.zone.modes[zoneModeIndex]["name"].size; i++)
+    //printLn("### setupZone: id = " + level.zone.modes[zoneModeIndex]["id"]);
+
+	if(!isDefined(level.zone.modes[zoneModeIndex]["endSize"])) //STATIC ZONE
 	{
-		if(level.zone.modes[zoneModeIndex]["name"][i] == "_")
+        if(level.zone.active)
 		{
-			modeIsTransition = true;
-			break;
-		}
-    }
-	if(!isDefined(modeIsTransition)) //STATIC ZONE
-	{
-		if(level.zone.active) //TODO: remove after tests
-		{
-            printLn("### Static zone already active");
+            printLn("### ERROR: Static zone already active");
 			return;
 		}
-		level.zone.indexMode = zoneModeIndex;
+
+        level.zone.indexMode = zoneModeIndex;
 		level.zone.life = 1000;
 		level.zone.currentSize = (int)level.zone.modes[zoneModeIndex]["startSize"];
 		level.zone thread playZone(level.zone.modes[zoneModeIndex]["fxId"], true);
+
+        if(zoneModeIndex != 0) //START ZONE NO COUNTDOWN
+        {
+            //Reset HUD
+            x = level.hud_zoneShrinkAlert.x;
+            y = level.hud_zoneShrinkAlert.y;
+            fontScale = level.hud_zoneShrinkAlert.fontScale;
+            level.hud_zoneShrinkAlert reset();
+            level.hud_zoneShrinkAlert.x = x;
+            level.hud_zoneShrinkAlert.y = y;
+            level.hud_zoneShrinkAlert.fontScale = fontScale;
+            level.hud_zoneShrinkAlert.label = level.text_zoneWillShrink;
+            level.hud_zoneShrinkAlert setTimer(level.zoneDuration);
+
+            level notify("zone_idle");
+        }
 	}
 	else //SHRINKING ZONE
 	{
@@ -879,12 +875,25 @@ setupZone(zoneModeIndex)
 		level.zone.nextZoneIndex = level.zone.indexMode + 1;
 		level.zone thread playZone(level.zone.modes[zoneModeIndex]["fxId"], false);
 		level.zone thread keepZoneSizeVarUpdated();
+
+        //Reset HUD
+        x = level.hud_zoneShrinkAlert.x;
+        y = level.hud_zoneShrinkAlert.y;
+        fontScale = level.hud_zoneShrinkAlert.fontScale;
+        level.hud_zoneShrinkAlert reset();
+        level.hud_zoneShrinkAlert.x = x;
+        level.hud_zoneShrinkAlert.y = y;
+        level.hud_zoneShrinkAlert.fontScale = fontScale;
+        level.hud_zoneShrinkAlert.color = level.color_red;
+        level.hud_zoneShrinkAlert.label = level.text_zoneIsShrinking;
+        level.hud_zoneShrinkAlert setTimer(level.zone.life / 1000);
 	}
 	level.zone.active = true;
-    printLn("### Playing zone");
 }
 playZone(fx, static)
 {
+    //printLn("### playZone");
+
 	if(static)
 	{
 		level.zoneLooper = playLoopedFX(fx, (self.life / 1000), self.origin);
@@ -902,6 +911,19 @@ playZone(fx, static)
 		}
 	}
 }
+/*
+moveZone() //TODO: move zone while shrinking
+{
+	zoneX = self.origin[0];
+	zoneY = self.origin[1];
+	zoneZ = self.origin[2];
+	destinationOrigin = (zoneX, zoneY + 800, zoneZ);
+	self moveTo(destinationOrigin, (self.life / 1000));
+	wait (self.life / 1000);
+	self delete();
+	level.zoneActive = undefined;
+}
+*/
 keepZoneSizeVarUpdated()
 {
 	currentTime = getTime();
@@ -915,24 +937,10 @@ keepZoneSizeVarUpdated()
 		currentTime = getTime();
 	}
 }
-/*
-moveZone()
-{
-	zoneX = self.origin[0];
-	zoneY = self.origin[1];
-	zoneZ = self.origin[2];
-	destinationOrigin = (zoneX, zoneY + 800, zoneZ);
-	self moveTo(destinationOrigin, (self.life / 1000));
-	wait (self.life / 1000);
-	self delete();
-	level.zoneActive = undefined;
-}
-*/
 checkPlayerInZone()
 {
     self endon("death");
     self endon("spawned_spectator");
-
     self.inZone = true;
 
     self.hudInStormDarkness = newClientHudElem(self);
@@ -976,6 +984,12 @@ checkPlayerInZone()
                     self.inZone = false;
                     self.hudInStormDarkness.alpha = 0.3;
                     self.hudInStormAlert setText(&"You are in the storm!");
+                }
+
+                if(level.battleOver)
+                {
+                    wait .05;
+                    continue;
                 }
 
 				damagePlayer = false;
