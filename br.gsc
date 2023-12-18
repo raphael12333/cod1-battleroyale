@@ -227,21 +227,7 @@ Callback_StartGameType()
 
 	setClientNameMode("auto_change");
 
-    //Hide messages from non-living players to alive players
-    if(getCvar("x_deadchat") == "0")
-    {
-        level.specHud = newTeamHudElem("spectator");
-        level.specHud.x = 5;
-        level.specHud.y = 125;
-        level.specHud setText(&"Your messages are not shown to alive players");
-    }
-
     level.zone setModel(level.model_zone);
-
-    
-
-
-    
     //Starting zone
     zone = "start";
     for(i = 0; i < level.zone.modes.size; i++)
@@ -806,10 +792,13 @@ startBattle()
     level.planePov = spawn("script_origin", originPlanePov);
 
     //MAKE PLAYERS TO FOLLOW THE PLANE
-    players = getentarray("player", "classname");
+    players = getEntArray("player", "classname");
 	for(i = 0; i < players.size; i++)
 	{
 		player = players[i];
+
+        if(!player.fights)
+            continue;
 
         player.inPlane = true;
         player closeMenu();
@@ -829,19 +818,30 @@ startBattle()
     level.planePov moveY(moveDistance, moveDelay);
 
     wait moveDelay;
-    
     for(i = 0; i < players.size; i++)
 	{
 		player = players[i];
-        if(isAlive(player) && !isDefined(player.jumped))
+        if(isAlive(player) && !player.jumped)
         {
             player.forceJump = true;
         }
     }
-
-    wait .05;
-    level.plane delete();
-    level.planePov delete();
+    wait 2;
+    everyoneJumped = true;
+    for(i = 0; i < players.size; i++)
+	{
+		player = players[i];
+        if(isAlive(player) && !player.jumped)
+        {
+            everyoneJumped = false;
+            break;
+        }
+    }
+    if(everyoneJumped)
+    {
+        level.plane delete();
+        level.planePov delete();
+    }
 }
 
 //ZONE FUNCTIONS
@@ -1116,7 +1116,7 @@ checkPlayerDive()
     airResistance_skydive_idle = 0.975;
     airResistance_skydive_forward = 0.99;
     airResistance_parachute_idle = 0.85;
-    airResistance_parachute_forward = 0.95;
+    airResistance_parachute_forward = 0.925;
 
     //CHECK MOVEMENTS
 	for(;;)
@@ -1396,11 +1396,9 @@ checkLanded()
 }
 //SKYDIVE FUNCTIONS END
 
-
-
-
 updateNumLivingPlayers()
 {
+    wait .05;
     for(;;)
 	{
         alivePlayers = 0;
@@ -1415,7 +1413,7 @@ updateNumLivingPlayers()
         }
         level.hud_numLivingPlayers setValue(alivePlayers);
 
-        wait .5;
+        wait .5; //for resource saving
         wait .05;
 	}
 }
@@ -1425,8 +1423,9 @@ checkVictoryRoyale()
         return;
     if(level.checkingVictoryRoyale)
         return;
-
     level.checkingVictoryRoyale = true;
+
+    wait .05;
 
     alivePlayers = [];
     players = getEntArray("player", "classname");
@@ -1437,6 +1436,8 @@ checkVictoryRoyale()
         {
             alivePlayers[alivePlayers.size] = player;
         }
+        if(alivePlayers.size > 1)
+            break;
     }
     if(alivePlayers.size == 1)
     {
@@ -1461,16 +1462,11 @@ checkVictoryRoyale()
             wait (0.1 / x);
             setCvar("timescale", x);
         }
-        //timescale = getCvar("timescale");
-        //printLn("### timescale = " + timescale);
         setCvar("timescale", "1");
     }
 
     level.checkingVictoryRoyale = false;
 }
-
-
-
 
 showDamageFeedback()
 {
@@ -1494,7 +1490,6 @@ showDamageFeedback()
     if(isDefined(self.hitBlip))
         self.hitBlip destroy();
 }
-
 //KILLCAM FUNCTIONS
 killcam(attackerNum, delay)
 {
