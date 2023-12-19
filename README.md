@@ -20,10 +20,10 @@ ___
 #### [Test videos](https://www.youtube.com/playlist?list=PLTiI1XPSd-uVS_saGvqfgk7hgguxHc1Y0)
 ___
 #### Some credits
-- *zilch* for the map and for agreeing the .map file to get hosted on this repo
-- [www.killtube.org](https://www.killtube.org/)
-  - particularly IzNoGoD
-- [www.cod.pm](https://cod.pm/)
-  - Thanks to Cato for his kindness, his helpful website and his awesome MiscMod
-- [www.vcodmods.com](https://www.vcodmods.com/)
+- *zh_frenzy* map: thanks to zilch
+- The [Killtube](https://www.killtube.org/) community
+- [cod.pm](https://cod.pm/)
+  - Thanks to Cato
 - [CoDExtended](https://github.com/xtnded/codextended)
+- [vCoDMods](https://www.vcodmods.com/)
+
