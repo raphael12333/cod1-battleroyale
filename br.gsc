@@ -59,11 +59,8 @@ main()
 
 
 
-
-    level.zoneDuration = 120;
-
+    level.zoneDuration = 100;
     level.killcamDuration = 5;
-
 
 
 
@@ -495,7 +492,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     self.deaths = 1;
 
     attackerNum = -1;
-    level.playercam = attacker;// getEntityNumber();
+    level.playercam = attacker getEntityNumber();
 
     if(isPlayer(attacker))
     {
@@ -506,7 +503,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
         }
         else
         {
-            //attackerNum = attacker getEntityNumber();
+            attackerNum = attacker getEntityNumber();
             doKillcam = true;
             attacker.pers["score"]++;
             attacker.score = attacker.pers["score"];
@@ -526,7 +523,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     
     if(doKillcam && !level.battleOver)
     {
-        self thread killcam(attacker, delay, false);
+        self thread killcam(attackerNum, delay, false);
     }
     else
     {
@@ -836,7 +833,7 @@ startBattle()
 manageZoneLifecycle()
 {
     level.hud_zoneShrinkAlert = newHudElem();
-    level.hud_zoneShrinkAlert.x = 450;
+    level.hud_zoneShrinkAlert.x = 465;
     level.hud_zoneShrinkAlert.y = 170;
     level.hud_zoneShrinkAlert.fontScale = 1.1;
 
@@ -1503,10 +1500,11 @@ checkVictoryRoyale()
 
         winner = alivePlayers[0];
         winner.hud_victoryRoyale = newClientHudElem(winner);
+        winner.hud_victoryRoyale.archived = false;
         winner.hud_victoryRoyale.alignX = "center";
         winner.hud_victoryRoyale.alignY = "middle";
         winner.hud_victoryRoyale.x = 320;
-        winner.hud_victoryRoyale.y = 100;
+        winner.hud_victoryRoyale.y = 90;
         winner.hud_victoryRoyale.color = level.color_blue;
         winner.hud_victoryRoyale.fontScale = 1.5;
         winner.hud_victoryRoyale.font = "bigfixed";
@@ -1523,8 +1521,7 @@ checkVictoryRoyale()
             setCvar("timescale", x);
         }
         setCvar("timescale", "1");
-        wait 4;
-        endMap();
+        thread endMap();
     }
     else if(alivePlayers.size == 0)
     {
@@ -1541,16 +1538,17 @@ checkVictoryRoyale()
         level.hud_victoryRoyale setText(&"NO ONE SURVIVED!");
 
         level.noWinner = true;
-        wait 4;
-        endMap();
+        thread endMap();
     }
 
     level.checkingVictoryRoyale = false;
 }
 endMap()
 {
+    wait 4;
+
     if(!level.noWinner)
-        level setupFinalKillcam();
+        level doFinalKillcam();
 
     game["state"] = "intermission";
     level notify("intermission");
@@ -1596,7 +1594,7 @@ showDamageFeedback()
         self.hitBlip destroy();
 }
 //KILLCAM FUNCTIONS
-setupFinalKillcam()
+doFinalKillcam()
 {
     viewers = 0;
     players = getEntArray("player", "classname");
@@ -1618,36 +1616,29 @@ setupFinalKillcam()
     }
     if (viewers)
         level waittill("finalKillcam_ended");
-    
-    return;
 }
-killcam(attacker, delay, finalKillcam)
+killcam(killerEntityNumber, delay, isFinalKillcam)
 {
-    if(!finalKillcam)
+    if(!isFinalKillcam)
         self endon("spawned");
+    
+    if(killerEntityNumber < 0)
+        return;
 
-    if(!isPlayer(attacker))
-        attacker = self;
     self.sessionstate = "spectator";
-    self.spectatorclient = attacker getEntityNumber();
-    //if(attackerNum < 0)
-        //return;
-    //self.sessionstate = "spectator";
-    //self.spectatorclient = attackerNum;
+    self.spectatorclient = killerEntityNumber;
     self.archivetime = delay + level.killcamDuration;
 
-    // wait till the next server frame to allow code a chance to update archivetime if it needs trimming
     wait .05;
 
     if(self.archivetime <= delay)
     {
-        printLn("### self.archivetime <= delay: return");
         self.spectatorclient = -1;
         self.archivetime = 0;
         return;
     }
 
-    if(!finalKillcam)
+    if(!isFinalKillcam)
         self.killcam = true;
 
     if(!isDefined(self.kc_topbar))
@@ -1657,6 +1648,7 @@ killcam(attacker, delay, finalKillcam)
         self.kc_topbar.x = 0;
         self.kc_topbar.y = 0;
         self.kc_topbar.alpha = 0.5;
+        self.kc_topbar.sort = -1;
         self.kc_topbar setShader("black", 640, 112);
     }
     if(!isDefined(self.kc_bottombar))
@@ -1680,7 +1672,7 @@ killcam(attacker, delay, finalKillcam)
         self.kc_title.fontScale = 2.5;
     }
     self.kc_title setText(&"MPSCRIPT_KILLCAM");
-    if(!isDefined(self.kc_skiptext) && !finalKillcam)
+    if(!isDefined(self.kc_skiptext) && !isFinalKillcam)
     {
         self.kc_skiptext = newClientHudElem(self);
         self.kc_skiptext.archived = false;
@@ -1690,33 +1682,29 @@ killcam(attacker, delay, finalKillcam)
         self.kc_skiptext.alignY = "middle";
         self.kc_skiptext.sort = 1; // force to draw after the bars
     }
-    if(!finalKillcam)
+    if(!isFinalKillcam)
         self.kc_skiptext setText(&"MPSCRIPT_PRESS_ACTIVATE_TO_SKIP");
 
-    if(!finalKillcam)
+    if(!isFinalKillcam)
     {
         self thread waitSkipKillcamButton();
         self thread waitKillcamTime();
         self waittill("end_killcam");
-        self removeKillcamElements();
     }
-
-    if(finalKillcam)
-        if(self.archivetime > delay)
-            wait self.archivetime - .05;
+    if(isFinalKillcam)
+        wait (self.archivetime - 0.05);
+    self removeKillcamElements();
 
     self.spectatorclient = -1;
     self.archivetime = 0;
-    if(!finalKillcam)
-        self.killcam = undefined;
 
-    if(finalKillcam)
+    if(isFinalKillcam)
     {
         level notify("finalKillcam_ended");
-        return;
     }
     else
     {
+        self.killcam = undefined;
         currentorigin = self.origin;
         currentangles = self getPlayerAngles();
         self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles, true);
