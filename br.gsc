@@ -1,11 +1,11 @@
 main()
 {
-	level.callbackStartGameType = ::Callback_StartGameType;
-	level.callbackPlayerConnect = ::Callback_PlayerConnect;
-	level.callbackPlayerDisconnect = ::Callback_PlayerDisconnect;
-	level.callbackPlayerDamage = ::Callback_PlayerDamage;
-	level.callbackPlayerKilled = ::Callback_PlayerKilled;
-	maps\mp\gametypes\_callbacksetup::SetupCallbacks();
+    level.callbackStartGameType = ::Callback_StartGameType;
+    level.callbackPlayerConnect = ::Callback_PlayerConnect;
+    level.callbackPlayerDisconnect = ::Callback_PlayerDisconnect;
+    level.callbackPlayerDamage = ::Callback_PlayerDamage;
+    level.callbackPlayerKilled = ::Callback_PlayerKilled;
+    maps\mp\gametypes\_callbacksetup::SetupCallbacks();
 
     nearDistance = 0; //Distance from the camera that the fog will start
     farDistance = 20000; //Distance from the camera that full occlusion will occur
@@ -79,91 +79,91 @@ main()
     level.camouflages[3] = "russian";
 
     zoneOriginStart = (1190, -1060, -520); //~center of map (zh_frenzy)
-	level.zone = spawn("script_model", zoneOriginStart);
-	level.zone.angles = (270, 0, 0); //DEPENDS ON MODELS TAG
+    level.zone = spawn("script_model", zoneOriginStart);
+    level.zone.angles = (270, 0, 0); //DEPENDS ON MODELS TAG
     level.zone.modelTag = "bip01 spine2";
     level.zone.objnum = 0;
 
     level.zone.modes = [];
 
-	level.zone.modes[0]["id"] = "start";
+    level.zone.modes[0]["id"] = "start";
     level.zone.modes[0]["fxId"] = loadfx("fx/zone-start.efx");
-	level.zone.modes[0]["startSize"] = "20000";
+    level.zone.modes[0]["startSize"] = "20000";
 
     level.zone.modes[1]["id"] = "start_1";
     level.zone.modes[1]["fxId"] = loadfx("fx/zone-start_1.efx");
     level.zone.modes[1]["life"] = "9500";
-	level.zone.modes[1]["startSize"] = level.zone.modes[1-1]["startSize"];
-	level.zone.modes[1]["endSize"] = "7000";
+    level.zone.modes[1]["startSize"] = level.zone.modes[1-1]["startSize"];
+    level.zone.modes[1]["endSize"] = "7000";
 
     level.zone.modes[2]["id"] = "1";
     level.zone.modes[2]["fxId"] = loadfx("fx/zone1.efx");
-	level.zone.modes[2]["startSize"] = level.zone.modes[2-1]["endSize"];
+    level.zone.modes[2]["startSize"] = level.zone.modes[2-1]["endSize"];
 
-	level.zone.modes[3]["id"] = "1_2";
+    level.zone.modes[3]["id"] = "1_2";
     level.zone.modes[3]["fxId"] = loadfx("fx/zone1_2.efx");
     level.zone.modes[3]["life"] = "6000";
-	level.zone.modes[3]["startSize"] = level.zone.modes[3-1]["startSize"];
-	level.zone.modes[3]["endSize"] = "3800";
+    level.zone.modes[3]["startSize"] = level.zone.modes[3-1]["startSize"];
+    level.zone.modes[3]["endSize"] = "3800";
 
     level.zone.modes[4]["id"] = "2";
     level.zone.modes[4]["fxId"] = loadfx("fx/zone2.efx");
-	level.zone.modes[4]["startSize"] = level.zone.modes[4-1]["endSize"];
+    level.zone.modes[4]["startSize"] = level.zone.modes[4-1]["endSize"];
 
-	level.zone.modes[5]["id"] = "2_3";
+    level.zone.modes[5]["id"] = "2_3";
     level.zone.modes[5]["fxId"] = loadfx("fx/zone2_3.efx");
     level.zone.modes[5]["life"] = "6000";
-	level.zone.modes[5]["startSize"] = level.zone.modes[5-1]["startSize"];
-	level.zone.modes[5]["endSize"] = "2700";
+    level.zone.modes[5]["startSize"] = level.zone.modes[5-1]["startSize"];
+    level.zone.modes[5]["endSize"] = "2700";
 
     level.zone.modes[6]["id"] = "3";
     level.zone.modes[6]["fxId"] = loadfx("fx/zone3.efx");
-	level.zone.modes[6]["startSize"] = level.zone.modes[6-1]["endSize"];
+    level.zone.modes[6]["startSize"] = level.zone.modes[6-1]["endSize"];
 
     level.zone.modes[7]["id"] = "3_4";
     level.zone.modes[7]["fxId"] = loadfx("fx/zone3_4.efx");
     level.zone.modes[7]["life"] = "6000";
-	level.zone.modes[7]["startSize"] = level.zone.modes[7-1]["startSize"];
-	level.zone.modes[7]["endSize"] = "1500";
+    level.zone.modes[7]["startSize"] = level.zone.modes[7-1]["startSize"];
+    level.zone.modes[7]["endSize"] = "1500";
 
-	level.zone.modes[8]["id"] = "4";
+    level.zone.modes[8]["id"] = "4";
     level.zone.modes[8]["fxId"] = loadfx("fx/zone4.efx");
-	level.zone.modes[8]["startSize"] = level.zone.modes[8-1]["endSize"];
+    level.zone.modes[8]["startSize"] = level.zone.modes[8-1]["endSize"];
 
-	level.zone.modes[9]["id"] = "4_5";
+    level.zone.modes[9]["id"] = "4_5";
     level.zone.modes[9]["fxId"] = loadfx("fx/zone4_5.efx");
     level.zone.modes[9]["life"] = "6000";
-	level.zone.modes[9]["startSize"] = level.zone.modes[9-1]["startSize"];
-	level.zone.modes[9]["endSize"] = "800";
+    level.zone.modes[9]["startSize"] = level.zone.modes[9-1]["startSize"];
+    level.zone.modes[9]["endSize"] = "800";
 
-	level.zone.modes[10]["id"] = "5";
+    level.zone.modes[10]["id"] = "5";
     level.zone.modes[10]["fxId"] = loadfx("fx/zone5.efx");
-	level.zone.modes[10]["startSize"] = level.zone.modes[10-1]["endSize"];
+    level.zone.modes[10]["startSize"] = level.zone.modes[10-1]["endSize"];
 
-	level.zone.modes[11]["id"] = "5_6";
+    level.zone.modes[11]["id"] = "5_6";
     level.zone.modes[11]["fxId"] = loadfx("fx/zone5_6.efx");
     level.zone.modes[11]["life"] = "6000";
-	level.zone.modes[11]["startSize"] = level.zone.modes[11-1]["startSize"];
-	level.zone.modes[11]["endSize"] = "300";
+    level.zone.modes[11]["startSize"] = level.zone.modes[11-1]["startSize"];
+    level.zone.modes[11]["endSize"] = "300";
 
-	level.zone.modes[12]["id"] = "6";
+    level.zone.modes[12]["id"] = "6";
     level.zone.modes[12]["fxId"] = loadfx("fx/zone6.efx");
-	level.zone.modes[12]["startSize"] = level.zone.modes[12-1]["endSize"];
+    level.zone.modes[12]["startSize"] = level.zone.modes[12-1]["endSize"];
 
-	level.zone.modes[13]["id"] = "6_end";
+    level.zone.modes[13]["id"] = "6_end";
     level.zone.modes[13]["fxId"] = loadfx("fx/zone6_end.efx");
     level.zone.modes[13]["life"] = "6000";
-	level.zone.modes[13]["startSize"] = level.zone.modes[13-1]["startSize"];
-	level.zone.modes[13]["endSize"] = "0";
+    level.zone.modes[13]["startSize"] = level.zone.modes[13-1]["startSize"];
+    level.zone.modes[13]["endSize"] = "0";
 
     level.color_red = (1, 0, 0);
     level.color_blue = (0, 0, 1);
     level.color_green = (0, 1, 0);
 
-	if(!isDefined(game["state"]))
-		game["state"] = "playing";
+    if(!isDefined(game["state"]))
+        game["state"] = "playing";
 
-	level.zone.active = false;
+    level.zone.active = false;
     level.startingBattle = false;
     level.battleStarted = false;
     level.battleOver = false;
@@ -171,45 +171,45 @@ main()
     level.noWinner = false;
 
     level.healthqueue = [];
-	level.healthqueuecurrent = 0;
+    level.healthqueuecurrent = 0;
 
-	setarchive(true);
+    setarchive(true);
 }
 //CALLBACKS
 Callback_StartGameType()
 {
     //View Map menu
     if(!isDefined(game["layoutimage"]))
-		game["layoutimage"] = "default";
-	layoutname = "levelshots/layouts/hud@layout_" + game["layoutimage"];
-	precacheShader(layoutname);
-	setcvar("scr_layoutimage", layoutname);
-	makeCvarServerInfo("scr_layoutimage", "");
+        game["layoutimage"] = "default";
+    layoutname = "levelshots/layouts/hud@layout_" + game["layoutimage"];
+    precacheShader(layoutname);
+    setcvar("scr_layoutimage", layoutname);
+    makeCvarServerInfo("scr_layoutimage", "");
 
     //MENUS
     game["menu_camouflage"] = "camouflage";
-	game["menu_weapon_all"] = "weapon_bolt";
+    game["menu_weapon_all"] = "weapon_bolt";
     game["menu_viewmap"] = "viewmap";
     game["menu_quickcommands"] = "quickcommands";
-	game["menu_quickstatements"] = "quickstatements";
-	game["menu_quickresponses"] = "quickresponses";
-	precacheMenu(game["menu_camouflage"]);
-	precacheMenu(game["menu_weapon_all"]);
+    game["menu_quickstatements"] = "quickstatements";
+    game["menu_quickresponses"] = "quickresponses";
+    precacheMenu(game["menu_camouflage"]);
+    precacheMenu(game["menu_weapon_all"]);
     precacheMenu(game["menu_viewmap"]);
-	precacheMenu(game["menu_quickcommands"]);
-	precacheMenu(game["menu_quickstatements"]);
-	precacheMenu(game["menu_quickresponses"]);
+    precacheMenu(game["menu_quickcommands"]);
+    precacheMenu(game["menu_quickstatements"]);
+    precacheMenu(game["menu_quickresponses"]);
 
     //SHADERS
-	precacheShader("black");
-	precacheShader("hudScoreboard_mp");
-	precacheShader("gfx/hud/hud@mpflag_none.tga");
-	precacheShader("gfx/hud/hud@mpflag_spectator.tga");
+    precacheShader("black");
+    precacheShader("hudScoreboard_mp");
+    precacheShader("gfx/hud/hud@mpflag_none.tga");
+    precacheShader("gfx/hud/hud@mpflag_spectator.tga");
     precacheShader("gfx/hud/damage_feedback.dds");
     precacheShader("gfx/hud/zone_center.dds");
 
     precacheStatusIcon("gfx/hud/hud@status_dead.tga");
-	precacheStatusIcon("gfx/hud/hud@status_connecting.tga");
+    precacheStatusIcon("gfx/hud/hud@status_connecting.tga");
 
     //OBJECT MODELS
     precacheModel(level.model_zone);
@@ -245,9 +245,9 @@ Callback_StartGameType()
     precacheItem("item_health");
 
     maps\mp\gametypes\_teams::initGlobalCvars();
-	maps\mp\gametypes\_teams::restrictPlacedWeapons();
+    maps\mp\gametypes\_teams::restrictPlacedWeapons();
 
-	setClientNameMode("auto_change");
+    setClientNameMode("auto_change");
 
     objective_add(level.zone.objnum, "current", level.zone.origin, "gfx/hud/zone_center.dds");
     objective_onEntity(level.zone.objnum, level.zone);
@@ -260,46 +260,46 @@ Callback_StartGameType()
 Callback_PlayerConnect()
 {
     self.statusicon = "gfx/hud/hud@status_connecting.tga";
-	self waittill("begin");
-	self.statusicon = "";
+    self waittill("begin");
+    self.statusicon = "";
 
     if(game["state"] == "intermission")
-	{
+    {
         spawnIntermission();
-		return;
-	}
+        return;
+    }
 
     self.pers["connected"] = true;
-	iprintln(&"MPSCRIPT_CONNECTED", self);
+    iprintln(&"MPSCRIPT_CONNECTED", self);
 
     self.fights = true;
     self.inPlane = false;
     self.jumped = false;
 
-	level endon("intermission");
+    level endon("intermission");
     
     self setClientCvar("g_scriptMainMenu", game["menu_camouflage"]);
     self setClientCvar("scr_showweapontab", "0");
-	self openMenu(game["menu_camouflage"]);
+    self openMenu(game["menu_camouflage"]);
     self.sessionteam = "spectator";
     spawnSpectator();
 
-	for(;;)
-	{
-		self waittill("menuresponse", menu, response);
+    for(;;)
+    {
+        self waittill("menuresponse", menu, response);
 
-		if(response == "open" || response == "close")
-			continue;
+        if(response == "open" || response == "close")
+            continue;
 
-		if(menu == game["menu_camouflage"])
-		{
-			switch(response)
-			{
+        if(menu == game["menu_camouflage"])
+        {
+            switch(response)
+            {
             case "american":
             case "british":
             case "german":
             case "russian":
-			case "autoassign":
+            case "autoassign":
                 if(self.jumped)
                     break;
                 if(isDefined(self.pers["camouflage"]) && response == self.pers["camouflage"])
@@ -322,50 +322,50 @@ Callback_PlayerConnect()
                     self setClientCvar("g_scriptMainMenu", game["menu_weapon_all"]);
                     self openMenu(game["menu_weapon_all"]);
                 }
-				break;
+                break;
 
-			case "spectator":
+            case "spectator":
                 self.fights = false;
                 if(isDefined(self.pers["camouflage"]))
                 {
                     self.pers["weapon"] = undefined;
                     self.pers["camouflage"] = undefined;
                     self.sessionteam = "spectator";
-					self setClientCvar("g_scriptMainMenu", game["menu_camouflage"]);
-					self setClientCvar("scr_showweapontab", "0");
-					spawnSpectator();
+                    self setClientCvar("g_scriptMainMenu", game["menu_camouflage"]);
+                    self setClientCvar("scr_showweapontab", "0");
+                    spawnSpectator();
                 }
-				break;
+                break;
 
-			case "weapon":
+            case "weapon":
                 self openMenu(game["menu_weapon_all"]);
-				break;
+                break;
 
             case "viewmap":
-				self openMenu(game["menu_viewmap"]);
-				break;
-			}
-		}
-		else if(menu == game["menu_weapon_all"])
-		{
+                self openMenu(game["menu_viewmap"]);
+                break;
+            }
+        }
+        else if(menu == game["menu_weapon_all"])
+        {
             if(response == "camouflage")
-			{
-				self openMenu(game["menu_camouflage"]);
-				continue;
-			}
+            {
+                self openMenu(game["menu_camouflage"]);
+                continue;
+            }
             else if(response == "viewmap")
-			{
-				self openMenu(game["menu_viewmap"]);
-				continue;
-			}
-			if(!isDefined(self.pers["camouflage"]))
-				continue;
-			if(self.jumped)
+            {
+                self openMenu(game["menu_viewmap"]);
+                continue;
+            }
+            if(!isDefined(self.pers["camouflage"]))
+                continue;
+            if(self.jumped)
                 break;
             
             weapon = response; //TODO: check if should verify the weapon is allowed
-			if(isDefined(self.pers["weapon"]) && self.pers["weapon"] == weapon)
-				continue; //Selected same weapon
+            if(isDefined(self.pers["weapon"]) && self.pers["weapon"] == weapon)
+                continue; //Selected same weapon
 
             if(isDefined(self.pers["weapon"]))
             {
@@ -385,48 +385,48 @@ Callback_PlayerConnect()
                 self.pers["weapon"] = weapon;
                 spawnPlayer();
             }
-		}
+        }
         else if(menu == game["menu_viewmap"])
-		{
-			switch(response)
-			{
-			case "camouflage":
-				self openMenu(game["menu_camouflage"]);
-				continue;
+        {
+            switch(response)
+            {
+            case "camouflage":
+                self openMenu(game["menu_camouflage"]);
+                continue;
 
-			case "weapon":
-				self openMenu(game["menu_weapon_all"]);
-				break;
-			}
-		}
-		else if(menu == game["menu_quickcommands"])
-			quickcommands(response);
-		else if(menu == game["menu_quickstatements"])
-			quickstatements(response);
-		else if(menu == game["menu_quickresponses"])
-			quickresponses(response);
-	}
+            case "weapon":
+                self openMenu(game["menu_weapon_all"]);
+                break;
+            }
+        }
+        else if(menu == game["menu_quickcommands"])
+            quickcommands(response);
+        else if(menu == game["menu_quickstatements"])
+            quickstatements(response);
+        else if(menu == game["menu_quickresponses"])
+            quickresponses(response);
+    }
 }
 Callback_PlayerDisconnect()
 {
-	iprintln(&"MPSCRIPT_DISCONNECTED", self);
+    iprintln(&"MPSCRIPT_DISCONNECTED", self);
     self notify("death");
     level thread checkVictoryRoyale();
 }
 Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc)
 {
     if(self.sessionteam == "spectator")
-		return;
+        return;
     if(level.battleOver)
         return;
 
-	// Don't do knockback if the damage direction was not specified
-	if(!isDefined(vDir))
-		iDFlags |= level.iDFLAGS_NO_KNOCKBACK;
+    // Don't do knockback if the damage direction was not specified
+    if(!isDefined(vDir))
+        iDFlags |= level.iDFLAGS_NO_KNOCKBACK;
 
-	// Make sure at least one point of damage is done
-	if(iDamage < 1)
-		iDamage = 1;
+    // Make sure at least one point of damage is done
+    if(iDamage < 1)
+        iDamage = 1;
 
     if(isDefined(eAttacker) && isPlayer(eAttacker) && isAlive(eAttacker))
     {
@@ -471,69 +471,69 @@ Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sW
             self dropItem(grenade);
     }
 
-	// Apply the damage to the player
-	self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc);
+    // Apply the damage to the player
+    self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc);
 }
 Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc)
 {
     level thread checkVictoryRoyale();
-	self endon("spawned");
+    self endon("spawned");
 
-	if(self.sessionteam == "spectator")
-		return;
+    if(self.sessionteam == "spectator")
+        return;
 
-	// If the player was killed by a head shot, let players know it was a head shot kill
-	if(sHitLoc == "head" && sMeansOfDeath != "MOD_MELEE")
-		sMeansOfDeath = "MOD_HEAD_SHOT";
+    // If the player was killed by a head shot, let players know it was a head shot kill
+    if(sHitLoc == "head" && sMeansOfDeath != "MOD_MELEE")
+        sMeansOfDeath = "MOD_HEAD_SHOT";
 
-	// send out an obituary message to all clients about the kill
-	obituary(self, attacker, sWeapon, sMeansOfDeath);
+    // send out an obituary message to all clients about the kill
+    obituary(self, attacker, sWeapon, sMeansOfDeath);
     self notify("death");
 
-	self.sessionstate = "dead";
-	self.statusicon = "gfx/hud/hud@status_dead.tga";
-	self.deaths = 1;
+    self.sessionstate = "dead";
+    self.statusicon = "gfx/hud/hud@status_dead.tga";
+    self.deaths = 1;
 
-	attackerNum = -1;
-	level.playercam = attacker;// getEntityNumber();
+    attackerNum = -1;
+    level.playercam = attacker;// getEntityNumber();
 
-	if(isPlayer(attacker))
-	{
-		if(attacker == self) // killed himself
-		{
-			doKillcam = false;
-			attacker.score = attacker.pers["score"];
-		}
-		else
-		{
-			//attackerNum = attacker getEntityNumber();
-			doKillcam = true;
-			attacker.pers["score"]++;
-			attacker.score = attacker.pers["score"];
-		}
-	}
-	else
-	{
-		doKillcam = false;
-	}
+    if(isPlayer(attacker))
+    {
+        if(attacker == self) // killed himself
+        {
+            doKillcam = false;
+            attacker.score = attacker.pers["score"];
+        }
+        else
+        {
+            //attackerNum = attacker getEntityNumber();
+            doKillcam = true;
+            attacker.pers["score"]++;
+            attacker.score = attacker.pers["score"];
+        }
+    }
+    else
+    {
+        doKillcam = false;
+    }
 
-	// Make the player drop health
-	self dropHealth();
-	body = self cloneplayer();
+    // Make the player drop health
+    self dropHealth();
+    body = self cloneplayer();
 
-	delay = 2;	// Delay the player becoming a spectator till after he's done dying
-	wait delay;	// ?? Also required for Callback_PlayerKilled to complete before killcam can execute
+    delay = 2;	// Delay the player becoming a spectator till after he's done dying
+    wait delay;	// ?? Also required for Callback_PlayerKilled to complete before killcam can execute
     
     if(doKillcam && !level.battleOver)
     {
         self thread killcam(attacker, delay, false);
     }
-	else
-	{
-		currentorigin = self.origin;
-		currentangles = self getPlayerAngles();
-		self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles, true);
-	}
+    else
+    {
+        currentorigin = self.origin;
+        currentangles = self getPlayerAngles();
+        self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles, true);
+    }
 }
 //CALLBACKS END
 
@@ -541,12 +541,12 @@ spawnSpectator(origin, angles, died)
 {
     printLn("#### spawnSpectator");
 
-	self notify("spawned");
+    self notify("spawned");
     self notify("spawned_spectator");
 
     level thread checkVictoryRoyale();
-	
-	resettimeout();
+    
+    resettimeout();
 
     if(!isDefined(died))
     {
@@ -557,25 +557,25 @@ spawnSpectator(origin, angles, died)
     self.spectatorclient = -1;
     self.archivetime = 0;
 
-	if(isDefined(origin) && isDefined(angles))
-		self spawn(origin, angles);
-	else
-	{
+    if(isDefined(origin) && isDefined(angles))
+        self spawn(origin, angles);
+    else
+    {
         self spawn(level.connectOrigin, level.connectAngles);
-	}
+    }
 
-	self setClientCvar("cg_objectiveText", level.objectiveText);
+    self setClientCvar("cg_objectiveText", level.objectiveText);
 }
 spawnPlayer(origin, angles)
 {
-	self notify("spawned");
+    self notify("spawned");
 
-	resettimeout();
+    resettimeout();
 
-	self.sessionteam = "none";
-	self.sessionstate = "playing";
-	self.spectatorclient = -1;
-	self.archivetime = 0;
+    self.sessionteam = "none";
+    self.sessionstate = "playing";
+    self.spectatorclient = -1;
+    self.archivetime = 0;
 
     if(isDefined(origin) && isDefined(angles))
     {
@@ -593,12 +593,12 @@ spawnPlayer(origin, angles)
             maps\mp\_utility::error("NO " + spawnpointname + " SPAWNPOINTS IN MAP");
     }
 
-	self.statusicon = "";
-	self.maxhealth = 100;
-	self.health = self.maxhealth;
+    self.statusicon = "";
+    self.maxhealth = 100;
+    self.health = self.maxhealth;
 
     self.pers["score"] = 0;
-	self.score = self.pers["score"];
+    self.score = self.pers["score"];
     self.deaths = 0;
 
     model();
@@ -615,16 +615,16 @@ spawnPlayer(origin, angles)
 }
 spawnIntermission()
 {
-	self notify("spawned");
-	self notify("end_respawn");
-	
-	resettimeout();
+    self notify("spawned");
+    self notify("end_respawn");
+    
+    resettimeout();
 
-	self.sessionstate = "intermission";
-	self.spectatorclient = -1;
-	self.archivetime = 0;
+    self.sessionstate = "intermission";
+    self.spectatorclient = -1;
+    self.archivetime = 0;
 
-	self spawn(level.connectOrigin, level.connectAngles);
+    self spawn(level.connectOrigin, level.connectAngles);
 }
 
 checkBattleReady()
@@ -633,22 +633,22 @@ checkBattleReady()
 
     level endon("battle_start");
 
-	fontScale_playerCount = 1.2;
+    fontScale_playerCount = 1.2;
 
     level.hud_waitingBackground = newHudElem();
     level.hud_waitingBackground.alignX = "center";
-	level.hud_waitingBackground.x = 320;
-	level.hud_waitingBackground.y = 20;
+    level.hud_waitingBackground.x = 320;
+    level.hud_waitingBackground.y = 20;
     level.hud_waitingBackground.alpha = 0.6;
     level.hud_waitingBackground.sort = -1;
     level.hud_waitingBackground setShader("black", 365, 66);
 
-	level.hud_waitingForPlayers = newHudElem();
-	level.hud_waitingForPlayers.alignX = "center";
+    level.hud_waitingForPlayers = newHudElem();
+    level.hud_waitingForPlayers.alignX = "center";
     level.hud_waitingForPlayers.alignY = "middle";
-	level.hud_waitingForPlayers.x = 320;
-	level.hud_waitingForPlayers.y = level.hud_waitingBackground.y + 21;
-	level.hud_waitingForPlayers.fontScale = 1.1;
+    level.hud_waitingForPlayers.x = 320;
+    level.hud_waitingForPlayers.y = level.hud_waitingBackground.y + 21;
+    level.hud_waitingForPlayers.fontScale = 1.1;
     level.hud_waitingForPlayers.font = "bigfixed";
     level.hud_waitingForPlayers.label = level.text_waitingPlayers;
 
@@ -657,45 +657,45 @@ checkBattleReady()
     level.hud_playersReady = newHudElem();
     level.hud_playersReady.alignX = "center";
     level.hud_playersReady.alignY = "middle";
-	level.hud_playersReady.x = level.hud_waitingForPlayers.x - distance_ready_min;
-	level.hud_playersReady.y = level.hud_waitingForPlayers.y + 24;
-	level.hud_playersReady.fontScale = fontScale_playerCount;
+    level.hud_playersReady.x = level.hud_waitingForPlayers.x - distance_ready_min;
+    level.hud_playersReady.y = level.hud_waitingForPlayers.y + 24;
+    level.hud_playersReady.fontScale = fontScale_playerCount;
     level.hud_playersReady.font = "bigfixed";
     
     level.hud_playersMin = newHudElem();
     level.hud_playersMin.alignX = "center";
     level.hud_playersMin.alignY = "middle";
-	level.hud_playersMin.x = level.hud_waitingForPlayers.x + distance_ready_min;
-	level.hud_playersMin.y = level.hud_playersReady.y;
-	level.hud_playersMin.fontScale = fontScale_playerCount;
+    level.hud_playersMin.x = level.hud_waitingForPlayers.x + distance_ready_min;
+    level.hud_playersMin.y = level.hud_playersReady.y;
+    level.hud_playersMin.fontScale = fontScale_playerCount;
     level.hud_playersMin.font = "bigfixed";
     level.hud_playersMin.label = &"/";
     level.hud_playersMin setValue(level.minPlayers);
 
-	for(;;)
-	{
+    for(;;)
+    {
         numberOfReadyPlayers = [];
-		for(i = 0; i < level.maxClients; i++)
-		{
-			player = getEntByNum(i);
-			if(isDefined(player))
-			{
-				if(isDefined(player.pers["connected"]))
-				{
-					//PLAYER IS CONNECTED
+        for(i = 0; i < level.maxClients; i++)
+        {
+            player = getEntByNum(i);
+            if(isDefined(player))
+            {
+                if(isDefined(player.pers["connected"]))
+                {
+                    //PLAYER IS CONNECTED
                     if(player.fights)
                         numberOfReadyPlayers[numberOfReadyPlayers.size] = player;
-				}
-			}
-		}
+                }
+            }
+        }
         level.hud_playersReady setValue(numberOfReadyPlayers.size);
 
-		if(numberOfReadyPlayers.size > 0) //AT LEAST 1 READY PLAYER
-		{
-			if(numberOfReadyPlayers.size < level.minPlayers) //MIN PLAYERS NOT REACHED YET
-			{
-				if(level.startingBattle) //Lost required players count, reset
-				{
+        if(numberOfReadyPlayers.size > 0) //AT LEAST 1 READY PLAYER
+        {
+            if(numberOfReadyPlayers.size < level.minPlayers) //MIN PLAYERS NOT REACHED YET
+            {
+                if(level.startingBattle) //Lost required players count, reset
+                {
                     level notify("battle_cancel");
                     level.startingBattle = false;
 
@@ -715,22 +715,22 @@ checkBattleReady()
                     level.hud_waitingForPlayers.fontScale = fontScale;
                     level.hud_waitingForPlayers.font = font;
                     level.hud_waitingForPlayers.label = level.text_waitingPlayers;
-				}
-			}
-			else if(numberOfReadyPlayers.size >= level.minPlayers) //MIN PLAYERS REACHED, START COUNTDOWN
-			{
-				if(numberOfReadyPlayers.size <= level.maxClients && !level.startingBattle)
-				{
+                }
+            }
+            else if(numberOfReadyPlayers.size >= level.minPlayers) //MIN PLAYERS REACHED, START COUNTDOWN
+            {
+                if(numberOfReadyPlayers.size <= level.maxClients && !level.startingBattle)
+                {
                     level.hud_waitingForPlayers.color = level.color_red;
                     level.hud_waitingForPlayers.label = &"BATTLE STARTING ";
-					level.hud_waitingForPlayers setTimer(level.startBattleCountdown);
+                    level.hud_waitingForPlayers setTimer(level.startBattleCountdown);
                     thread startBattle();
-				}
-			}
-		}
+                }
+            }
+        }
 
-		wait .05;
-	}
+        wait .05;
+    }
 }
 startBattle()
 {
@@ -740,7 +740,7 @@ startBattle()
 
     level endon("battle_cancel");
     level.startingBattle = true;
-	wait level.startBattleCountdown;
+    wait level.startBattleCountdown;
     level notify("battle_start");
 
     level.startingBattle = false;
@@ -753,35 +753,35 @@ startBattle()
 
     level.hud_numLivingPlayers = newHudElem();
     level.hud_numLivingPlayers.x = 570;
-	level.hud_numLivingPlayers.y = 80;
+    level.hud_numLivingPlayers.y = 80;
     level.hud_numLivingPlayers.label = &"Alive: ";
     thread updateNumLivingPlayers();
 
     //using map zh_frenzy
-	originPlane = (2050, -18000, 8070);
+    originPlane = (2050, -18000, 8070);
     anglesPlane = (0, 90, 0);
     level.plane = spawn("script_model", originPlane);
-	level.plane setModel(level.model_plane);
+    level.plane setModel(level.model_plane);
     level.plane.angles = anglesPlane;
 
     originPlanePov =
-		(level.plane.origin[0],
-		level.plane.origin[1] - 700,
-		level.plane.origin[2] + 400);
+        (level.plane.origin[0],
+        level.plane.origin[1] - 700,
+        level.plane.origin[2] + 400);
     anglesPlanePov =
-		(level.plane.angles[0] + 25,
-		level.plane.angles[1],
-		level.plane.angles[2]);
+        (level.plane.angles[0] + 25,
+        level.plane.angles[1],
+        level.plane.angles[2]);
 
     moveDistance = 30000;
-	moveDelay = 22;
+    moveDelay = 22;
     level.planePov = spawn("script_origin", originPlanePov);
 
     //MAKE PLAYERS TO FOLLOW THE PLANE
     players = getEntArray("player", "classname");
-	for(i = 0; i < players.size; i++)
-	{
-		player = players[i];
+    for(i = 0; i < players.size; i++)
+    {
+        player = players[i];
 
         if(!player.fights)
             continue;
@@ -806,8 +806,8 @@ startBattle()
 
     wait moveDelay;
     for(i = 0; i < players.size; i++)
-	{
-		player = players[i];
+    {
+        player = players[i];
         if(isAlive(player) && !player.jumped)
         {
             player.forceJump = true;
@@ -816,8 +816,8 @@ startBattle()
     wait 3;
     everyoneJumped = true;
     for(i = 0; i < players.size; i++)
-	{
-		player = players[i];
+    {
+        player = players[i];
         if(isAlive(player) && !player.jumped)
         {
             everyoneJumped = false;
@@ -836,9 +836,9 @@ startBattle()
 manageZoneLifecycle()
 {
     level.hud_zoneShrinkAlert = newHudElem();
-	level.hud_zoneShrinkAlert.x = 450;
-	level.hud_zoneShrinkAlert.y = 170;
-	level.hud_zoneShrinkAlert.fontScale = 1.1;
+    level.hud_zoneShrinkAlert.x = 450;
+    level.hud_zoneShrinkAlert.y = 170;
+    level.hud_zoneShrinkAlert.fontScale = 1.1;
 
     zoneIndex = 0; //Waiting for players
     thread setupZone(zoneIndex);
@@ -862,18 +862,18 @@ setupZone(zoneModeIndex)
 {
     //printLn("### setupZone: id = " + level.zone.modes[zoneModeIndex]["id"]);
 
-	if(!isDefined(level.zone.modes[zoneModeIndex]["endSize"])) //STATIC ZONE
-	{
+    if(!isDefined(level.zone.modes[zoneModeIndex]["endSize"])) //STATIC ZONE
+    {
         if(level.zone.active)
-		{
+        {
             printLn("### ERROR: Static zone already active");
-			return;
-		}
+            return;
+        }
 
         level.zone.indexMode = zoneModeIndex;
-		level.zone.life = 1000;
-		level.zone.currentSize = (int)level.zone.modes[zoneModeIndex]["startSize"];
-		level.zone thread playZone(level.zone.modes[zoneModeIndex]["fxId"], true);
+        level.zone.life = 1000;
+        level.zone.currentSize = (int)level.zone.modes[zoneModeIndex]["startSize"];
+        level.zone thread playZone(level.zone.modes[zoneModeIndex]["fxId"], true);
 
         if(zoneModeIndex != 0) //START ZONE NO COUNTDOWN
         {
@@ -890,19 +890,19 @@ setupZone(zoneModeIndex)
 
             level notify("zone_idle");
         }
-	}
-	else //SHRINKING ZONE
-	{
+    }
+    else //SHRINKING ZONE
+    {
         level.zone.active = false;
-		level.zoneLooper delete();
-		level.zone.indexMode = zoneModeIndex;
-		level.zone.life = (int)level.zone.modes[zoneModeIndex]["life"];
-		level.zone.startSize = (int)level.zone.modes[zoneModeIndex]["startSize"];
-		level.zone.currentSize = level.zone.startSize;
-		level.zone.endSize = (int)level.zone.modes[zoneModeIndex]["endSize"];
-		level.zone.nextZoneIndex = level.zone.indexMode + 1;
-		level.zone thread playZone(level.zone.modes[zoneModeIndex]["fxId"], false);
-		level.zone thread keepZoneSizeVarUpdated();
+        level.zoneLooper delete();
+        level.zone.indexMode = zoneModeIndex;
+        level.zone.life = (int)level.zone.modes[zoneModeIndex]["life"];
+        level.zone.startSize = (int)level.zone.modes[zoneModeIndex]["startSize"];
+        level.zone.currentSize = level.zone.startSize;
+        level.zone.endSize = (int)level.zone.modes[zoneModeIndex]["endSize"];
+        level.zone.nextZoneIndex = level.zone.indexMode + 1;
+        level.zone thread playZone(level.zone.modes[zoneModeIndex]["fxId"], false);
+        level.zone thread keepZoneSizeVarUpdated();
 
         //Reset HUD
         x = level.hud_zoneShrinkAlert.x;
@@ -915,61 +915,61 @@ setupZone(zoneModeIndex)
         level.hud_zoneShrinkAlert.color = level.color_red;
         level.hud_zoneShrinkAlert.label = level.text_zoneIsShrinking;
         level.hud_zoneShrinkAlert setTimer(level.zone.life / 1000);
-	}
-	level.zone.active = true;
+    }
+    level.zone.active = true;
 }
 playZone(fx, static)
 {
     //printLn("### playZone");
 
-	if(static)
-	{
-		level.zoneLooper = playLoopedFX(fx, (self.life / 1000), self.origin);
-	}
-	else
-	{
+    if(static)
+    {
+        level.zoneLooper = playLoopedFX(fx, (self.life / 1000), self.origin);
+    }
+    else
+    {
         wait 0.5; //.05 was not enough
         playFXOnTag(fx, self, self.modelTag);
-		if(self.indexMode != level.zone.modes.size - 1) //FINAL FULL SHRINKS DOESNT PLAY NEXT
-		{
-			wait (self.life / 1000);
-			//PLAY NEXT STATIC ZONE
-			level.zone.active = false;
-			level thread setupZone(self.nextZoneIndex);
-		}
+        if(self.indexMode != level.zone.modes.size - 1) //FINAL FULL SHRINKS DOESNT PLAY NEXT
+        {
+            wait (self.life / 1000);
+            //PLAY NEXT STATIC ZONE
+            level.zone.active = false;
+            level thread setupZone(self.nextZoneIndex);
+        }
         else
         {
             wait (self.life / 1000);
             //Destroy HUD
             level.hud_zoneShrinkAlert destroy();
         }
-	}
+    }
 }
 /*
 moveZone() //TODO: move zone while shrinking
 {
-	zoneX = self.origin[0];
-	zoneY = self.origin[1];
-	zoneZ = self.origin[2];
-	destinationOrigin = (zoneX, zoneY + 800, zoneZ);
-	self moveTo(destinationOrigin, (self.life / 1000));
-	wait (self.life / 1000);
-	self delete();
-	level.zoneActive = undefined;
+    zoneX = self.origin[0];
+    zoneY = self.origin[1];
+    zoneZ = self.origin[2];
+    destinationOrigin = (zoneX, zoneY + 800, zoneZ);
+    self moveTo(destinationOrigin, (self.life / 1000));
+    wait (self.life / 1000);
+    self delete();
+    level.zoneActive = undefined;
 }
 */
 keepZoneSizeVarUpdated()
 {
-	currentTime = getTime();
-	startTime = currentTime;
-	while(currentTime - startTime < self.life)
-	{
-		progress = (float)(currentTime - startTime) / self.life;
-		currentSize = self.startSize + (int)((self.endSize - self.startSize) * progress);
-		self.currentSize = currentSize;
-		wait .05;
-		currentTime = getTime();
-	}
+    currentTime = getTime();
+    startTime = currentTime;
+    while(currentTime - startTime < self.life)
+    {
+        progress = (float)(currentTime - startTime) / self.life;
+        currentSize = self.startSize + (int)((self.endSize - self.startSize) * progress);
+        self.currentSize = currentSize;
+        wait .05;
+        currentTime = getTime();
+    }
 }
 checkPlayerInZone()
 {
@@ -990,29 +990,29 @@ checkPlayerInZone()
     self.hudInStormAlert.color = level.color_red;
     self.hudInStormAlert.fontScale = 1.3;
 
-	for(;;)
-	{
+    for(;;)
+    {
         if(level.zone.active)
-		{
+        {
             //IGNORE Z
-			selfOriginX = self.origin[0];
-			selfOriginY = self.origin[1];
-			selfOriginNoZ = (selfOriginX, selfOriginY, 0);
+            selfOriginX = self.origin[0];
+            selfOriginY = self.origin[1];
+            selfOriginNoZ = (selfOriginX, selfOriginY, 0);
 
-			zoneOriginX = level.zone.origin[0];
-			zoneOriginY = level.zone.origin[1];
-			zoneOriginNoZ = (zoneOriginX, zoneOriginY, 0);
+            zoneOriginX = level.zone.origin[0];
+            zoneOriginY = level.zone.origin[1];
+            zoneOriginNoZ = (zoneOriginX, zoneOriginY, 0);
 
             inZone = (distance(selfOriginNoZ, zoneOriginNoZ) < level.zone.currentSize);
-			if(inZone && !self.inZone)
-			{
+            if(inZone && !self.inZone)
+            {
                 //ENTERED ZONE
                 self.inZone = true;
                 self.hudInStormDarkness.alpha = 0;
                 self.hudInStormAlert setText(&"");
-			}
-			else if(!inZone)
-			{
+            }
+            else if(!inZone)
+            {
                 if(self.inZone)
                 {
                     //ENTERED STORM
@@ -1027,22 +1027,22 @@ checkPlayerInZone()
                     continue;
                 }
 
-				damagePlayer = false;
-				if(isDefined(self.lastZoneDamageTime))
-				{
-					secondsPassed = (getTime() - self.lastZoneDamageTime) / 1000;
-					if(secondsPassed > 2)
-					{
-						damagePlayer = true;
-					}
-				}
-				else
-				{
-					damagePlayer = true;
-				}
+                damagePlayer = false;
+                if(isDefined(self.lastZoneDamageTime))
+                {
+                    secondsPassed = (getTime() - self.lastZoneDamageTime) / 1000;
+                    if(secondsPassed > 2)
+                    {
+                        damagePlayer = true;
+                    }
+                }
+                else
+                {
+                    damagePlayer = true;
+                }
 
-				if(damagePlayer)
-				{
+                if(damagePlayer)
+                {
                     eInflictor = level.zone;
                     eAttacker = level.zone;
                     iDamage = 5;
@@ -1055,12 +1055,12 @@ checkPlayerInZone()
                     psOffsetTime = 0;
                     self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime);
                     self.lastZoneDamageTime = getTime();
-				}
-			}
-		}
+                }
+            }
+        }
 
-		wait .05;
-	}
+        wait .05;
+    }
 }
 //ZONE FUNCTIONS END
 
@@ -1074,51 +1074,51 @@ checkPlayerJumped()
     self.hud_jump_parachute.alignX = "center";
     self.hud_jump_parachute.alignY = "middle";
     self.hud_jump_parachute.x = 320;
-	self.hud_jump_parachute.y = 40;
-	self.hud_jump_parachute.fontScale = 1.2;
-	self.hud_jump_parachute setText(&"Press ^1[{+activate}] ^7to jump");
+    self.hud_jump_parachute.y = 40;
+    self.hud_jump_parachute.fontScale = 1.2;
+    self.hud_jump_parachute setText(&"Press ^1[{+activate}] ^7to jump");
 
-	for(;;)
-	{
+    for(;;)
+    {
         //FORCE STANDING
         if(self getStance() != "stand")
             self setClientCvar("cl_stance", "0");
 
-		if(self useButtonPressed() || isDefined(self.forceJump))
-		{
+        if(self useButtonPressed() || isDefined(self.forceJump))
+        {
             self.jumped = true;
 
             self setClientCvar("g_scriptMainMenu", game["menu_camouflage"]);
-			self setClientCvar("scr_showweapontab", "0");
+            self setClientCvar("scr_showweapontab", "0");
 
             self.hud_jump_parachute setText(&"");
 
-			anglesBeforeSpawn = self getPlayerAngles();
+            anglesBeforeSpawn = self getPlayerAngles();
             self spawnPlayer(level.planePov.origin, anglesBeforeSpawn);
             self.inPlane = false;
             self showToPlayer(undefined);
-			//self setClientCvar("cg_thirdPerson", "1");
+            //self setClientCvar("cg_thirdPerson", "1");
 
-			delayExitPlane = 0.35;
-			underPlaneOrigin =
-				(level.planePov.origin[0],
-				level.planePov.origin[1] - 100,
-				(level.planePov.origin[2] - 1000));
+            delayExitPlane = 0.35;
+            underPlaneOrigin =
+                (level.planePov.origin[0],
+                level.planePov.origin[1] - 100,
+                (level.planePov.origin[2] - 1000));
 
             self.jumpPov = spawn("script_origin", level.planePov.origin);
 
             self linkto(self.jumpPov);
-			self.jumpPov moveTo(underPlaneOrigin, delayExitPlane);
-			wait delayExitPlane;
+            self.jumpPov moveTo(underPlaneOrigin, delayExitPlane);
+            wait delayExitPlane;
 
-			self unlink();
-			self.jumpPov delete();
-			self thread checkPlayerDive();
+            self unlink();
+            self.jumpPov delete();
+            self thread checkPlayerDive();
 
-			break;
-		}
-		wait .05;
-	}
+            break;
+        }
+        wait .05;
+    }
 }
 checkReleasedUseButton()
 {
@@ -1173,8 +1173,8 @@ checkPlayerDive()
     airResistance_parachute_forward = 0.925;
 
     //CHECK MOVEMENTS
-	for(;;)
-	{
+    for(;;)
+    {
         //FORCE STANDING
         if(self getStance() != "stand")
             self setClientCvar("cl_stance", "0");
@@ -1236,7 +1236,7 @@ checkPlayerDive()
         
         velocity = self getVelocity();
         angles = self getPlayerAngles();
-		forwardDirection = anglesToForward(angles);
+        forwardDirection = anglesToForward(angles);
         backwardDirection = anglesToBackward(angles);
         leftDirection = anglesToLeft(angles);
         rightDirection = anglesToRight(angles);
@@ -1410,19 +1410,19 @@ checkPlayerDive()
         
         self setVelocity(newVelocity);
         
-		wait .05;
-	}
+        wait .05;
+    }
 }
 checkLanded()
 {
     self endon("death");
     self endon("spawned_spectator");
     
-	for(;;)
-	{
-		if(self isOnGround())
-		{
-			self notify("landed");
+    for(;;)
+    {
+        if(self isOnGround())
+        {
+            self notify("landed");
 
             self.hud_jump_parachute destroy();
             self.hud_parachuteStateIndicator destroy();
@@ -1447,10 +1447,10 @@ checkLanded()
             self giveMaxAmmo(self.pers["weapon"]);
             self switchToWeapon(self.pers["weapon"]);
 
-			break;
-		}
-		wait .05;
-	}
+            break;
+        }
+        wait .05;
+    }
 }
 //SKYDIVE FUNCTIONS END
 
@@ -1458,7 +1458,7 @@ updateNumLivingPlayers()
 {
     wait .05;
     for(;;)
-	{
+    {
         alivePlayers = 0;
         players = getEntArray("player", "classname");
         for(i = 0; i < players.size; i++)
@@ -1473,7 +1473,7 @@ updateNumLivingPlayers()
 
         wait .5; //for resource saving
         wait .05;
-	}
+    }
 }
 checkVictoryRoyale()
 {
@@ -1553,24 +1553,24 @@ endMap()
         level setupFinalKillcam();
 
     game["state"] = "intermission";
-	level notify("intermission");
+    level notify("intermission");
 
-	players = getEntArray("player", "classname");
-	for(i = 0; i < players.size; i++)
-	{
-		player = players[i];
+    players = getEntArray("player", "classname");
+    for(i = 0; i < players.size; i++)
+    {
+        player = players[i];
 
-		player closeMenu();
-		player setClientCvar("g_scriptMainMenu", "main");
+        player closeMenu();
+        player setClientCvar("g_scriptMainMenu", "main");
         if(level.noWinner)
             player setClientCvar("cg_objectiveText", "No one survived!");
         else
             player setClientCvar("cg_objectiveText", &"MPSCRIPT_WINS", level.winnerName);
         
-		player spawnIntermission();
-	}
+        player spawnIntermission();
+    }
     wait 6;
-	exitLevel(false);
+    exitLevel(false);
 }
 
 showDamageFeedback()
@@ -1589,7 +1589,7 @@ showDamageFeedback()
     self.hitBlip setShader("gfx/hud/damage_feedback.dds", 24, 24);
 
     self.hitBlip fadeOverTime(1);
-	self.hitBlip.alpha = 0;
+    self.hitBlip.alpha = 0;
 
     wait 0.30;
     if(isDefined(self.hitBlip))
@@ -1599,27 +1599,27 @@ showDamageFeedback()
 setupFinalKillcam()
 {
     viewers = 0;
-	players = getEntArray("player", "classname");
-	for (i = 0; i < players.size; i++)
-	{
-		player = players[i];
+    players = getEntArray("player", "classname");
+    for (i = 0; i < players.size; i++)
+    {
+        player = players[i];
 
-		if (isDefined(player.killcam) || (player.archivetime > 0))
-		{
-			// Already running killcam, stop it
-			player notify("spawned");
-			wait .05;
-			player.spectatorclient = -1;
-			player.archivetime = 0;
-		}
+        if (isDefined(player.killcam) || (player.archivetime > 0))
+        {
+            // Already running killcam, stop it
+            player notify("spawned");
+            wait .05;
+            player.spectatorclient = -1;
+            player.archivetime = 0;
+        }
 
-		player thread killcam(level.playercam, 2, true);
-		viewers++;
-	}
-	if (viewers)
-		level waittill("finalKillcam_ended");
-	
-	return;
+        player thread killcam(level.playercam, 2, true);
+        viewers++;
+    }
+    if (viewers)
+        level waittill("finalKillcam_ended");
+    
+    return;
 }
 killcam(attacker, delay, finalKillcam)
 {
@@ -1630,66 +1630,66 @@ killcam(attacker, delay, finalKillcam)
         attacker = self;
     self.sessionstate = "spectator";
     self.spectatorclient = attacker getEntityNumber();
-	//if(attackerNum < 0)
-		//return;
-	//self.sessionstate = "spectator";
-	//self.spectatorclient = attackerNum;
-	self.archivetime = delay + level.killcamDuration;
+    //if(attackerNum < 0)
+        //return;
+    //self.sessionstate = "spectator";
+    //self.spectatorclient = attackerNum;
+    self.archivetime = delay + level.killcamDuration;
 
-	// wait till the next server frame to allow code a chance to update archivetime if it needs trimming
-	wait .05;
+    // wait till the next server frame to allow code a chance to update archivetime if it needs trimming
+    wait .05;
 
-	if(self.archivetime <= delay)
-	{
+    if(self.archivetime <= delay)
+    {
         printLn("### self.archivetime <= delay: return");
-		self.spectatorclient = -1;
-		self.archivetime = 0;
-		return;
-	}
+        self.spectatorclient = -1;
+        self.archivetime = 0;
+        return;
+    }
 
     if(!finalKillcam)
-	    self.killcam = true;
+        self.killcam = true;
 
-	if(!isDefined(self.kc_topbar))
-	{
-		self.kc_topbar = newClientHudElem(self);
-		self.kc_topbar.archived = false;
-		self.kc_topbar.x = 0;
-		self.kc_topbar.y = 0;
-		self.kc_topbar.alpha = 0.5;
-		self.kc_topbar setShader("black", 640, 112);
-	}
-	if(!isDefined(self.kc_bottombar))
-	{
-		self.kc_bottombar = newClientHudElem(self);
-		self.kc_bottombar.archived = false;
-		self.kc_bottombar.x = 0;
-		self.kc_bottombar.y = 368;
-		self.kc_bottombar.alpha = 0.5;
-		self.kc_bottombar setShader("black", 640, 112);
-	}
-	if(!isDefined(self.kc_title))
-	{
-		self.kc_title = newClientHudElem(self);
-		self.kc_title.archived = false;
-		self.kc_title.x = 320;
-		self.kc_title.y = 40;
-		self.kc_title.alignX = "center";
-		self.kc_title.alignY = "middle";
-		self.kc_title.sort = 1; // force to draw after the bars
-		self.kc_title.fontScale = 2.5;
-	}
-	self.kc_title setText(&"MPSCRIPT_KILLCAM");
-	if(!isDefined(self.kc_skiptext) && !finalKillcam)
-	{
-		self.kc_skiptext = newClientHudElem(self);
-		self.kc_skiptext.archived = false;
-		self.kc_skiptext.x = 320;
-		self.kc_skiptext.y = 70;
-		self.kc_skiptext.alignX = "center";
-		self.kc_skiptext.alignY = "middle";
-		self.kc_skiptext.sort = 1; // force to draw after the bars
-	}
+    if(!isDefined(self.kc_topbar))
+    {
+        self.kc_topbar = newClientHudElem(self);
+        self.kc_topbar.archived = false;
+        self.kc_topbar.x = 0;
+        self.kc_topbar.y = 0;
+        self.kc_topbar.alpha = 0.5;
+        self.kc_topbar setShader("black", 640, 112);
+    }
+    if(!isDefined(self.kc_bottombar))
+    {
+        self.kc_bottombar = newClientHudElem(self);
+        self.kc_bottombar.archived = false;
+        self.kc_bottombar.x = 0;
+        self.kc_bottombar.y = 368;
+        self.kc_bottombar.alpha = 0.5;
+        self.kc_bottombar setShader("black", 640, 112);
+    }
+    if(!isDefined(self.kc_title))
+    {
+        self.kc_title = newClientHudElem(self);
+        self.kc_title.archived = false;
+        self.kc_title.x = 320;
+        self.kc_title.y = 40;
+        self.kc_title.alignX = "center";
+        self.kc_title.alignY = "middle";
+        self.kc_title.sort = 1; // force to draw after the bars
+        self.kc_title.fontScale = 2.5;
+    }
+    self.kc_title setText(&"MPSCRIPT_KILLCAM");
+    if(!isDefined(self.kc_skiptext) && !finalKillcam)
+    {
+        self.kc_skiptext = newClientHudElem(self);
+        self.kc_skiptext.archived = false;
+        self.kc_skiptext.x = 320;
+        self.kc_skiptext.y = 70;
+        self.kc_skiptext.alignX = "center";
+        self.kc_skiptext.alignY = "middle";
+        self.kc_skiptext.sort = 1; // force to draw after the bars
+    }
     if(!finalKillcam)
         self.kc_skiptext setText(&"MPSCRIPT_PRESS_ACTIVATE_TO_SKIP");
 
@@ -1705,15 +1705,15 @@ killcam(attacker, delay, finalKillcam)
         if(self.archivetime > delay)
             wait self.archivetime - .05;
 
-	self.spectatorclient = -1;
-	self.archivetime = 0;
+    self.spectatorclient = -1;
+    self.archivetime = 0;
     if(!finalKillcam)
-	    self.killcam = undefined;
+        self.killcam = undefined;
 
     if(finalKillcam)
     {
         level notify("finalKillcam_ended");
-	    return;
+        return;
     }
     else
     {
@@ -1724,43 +1724,43 @@ killcam(attacker, delay, finalKillcam)
 }
 waitKillcamTime()
 {
-	self endon("end_killcam");
-	
-	wait (self.archivetime - 0.05);
-	self notify("end_killcam");
+    self endon("end_killcam");
+    
+    wait (self.archivetime - 0.05);
+    self notify("end_killcam");
 }
 waitSkipKillcamButton()
 {
-	self endon("end_killcam");
-	
-	while(self useButtonPressed())
-		wait .05;
+    self endon("end_killcam");
+    
+    while(self useButtonPressed())
+        wait .05;
 
-	while(!(self useButtonPressed()))
-		wait .05;
-	
-	self notify("end_killcam");	
+    while(!(self useButtonPressed()))
+        wait .05;
+    
+    self notify("end_killcam");	
 }
 removeKillcamElements()
 {
-	if(isDefined(self.kc_topbar))
-		self.kc_topbar destroy();
-	if(isDefined(self.kc_bottombar))
-		self.kc_bottombar destroy();
-	if(isDefined(self.kc_title))
-		self.kc_title destroy();
-	if(isDefined(self.kc_skiptext))
-		self.kc_skiptext destroy();
+    if(isDefined(self.kc_topbar))
+        self.kc_topbar destroy();
+    if(isDefined(self.kc_bottombar))
+        self.kc_bottombar destroy();
+    if(isDefined(self.kc_title))
+        self.kc_title destroy();
+    if(isDefined(self.kc_skiptext))
+        self.kc_skiptext destroy();
 }
 //KILLCAM FUNCTIONS END
 
 //VSAY
 quickcommands(response)
 {
-	if(!isDefined(self.pers["camouflage"]) || isDefined(self.spamdelay))
-		return;
+    if(!isDefined(self.pers["camouflage"]) || isDefined(self.spamdelay))
+        return;
 
-	self.spamdelay = true;
+    self.spamdelay = true;
 
     switch(self.pers["camouflage"])
     {
@@ -1999,19 +1999,19 @@ quickcommands(response)
         break;
     }
 
-	self doQuickMessage(soundalias, saytext);
+    self doQuickMessage(soundalias, saytext);
 
-	wait level.quickChatDelay;
-	self.spamdelay = undefined;
+    wait level.quickChatDelay;
+    self.spamdelay = undefined;
 }
 quickstatements(response)
 {
-	if(!isDefined(self.pers["camouflage"]) || isDefined(self.spamdelay))
-		return;
+    if(!isDefined(self.pers["camouflage"]) || isDefined(self.spamdelay))
+        return;
 
-	self.spamdelay = true;
-	
-	switch(self.pers["camouflage"])
+    self.spamdelay = true;
+    
+    switch(self.pers["camouflage"])
     {
     case "american":
         switch(response)		
@@ -2228,19 +2228,19 @@ quickstatements(response)
     
     }
 
-	self doQuickMessage(soundalias, saytext);
+    self doQuickMessage(soundalias, saytext);
 
-	wait level.quickChatDelay;
-	self.spamdelay = undefined;
+    wait level.quickChatDelay;
+    self.spamdelay = undefined;
 }
 quickresponses(response)
 {
-	if(!isDefined(self.pers["camouflage"]) || isDefined(self.spamdelay))
-		return;
+    if(!isDefined(self.pers["camouflage"]) || isDefined(self.spamdelay))
+        return;
 
-	self.spamdelay = true;
+    self.spamdelay = true;
 
-	switch(self.pers["camouflage"])
+    switch(self.pers["camouflage"])
     {
     case "american":
         switch(response)		
@@ -2447,26 +2447,26 @@ quickresponses(response)
         break;
     }
 
-	self doQuickMessage(soundalias, saytext);
+    self doQuickMessage(soundalias, saytext);
 
-	wait level.quickChatDelay;
-	self.spamdelay = undefined;
+    wait level.quickChatDelay;
+    self.spamdelay = undefined;
 }
 doQuickMessage(soundalias, saytext)
 {
-	if(self.sessionstate != "playing")
-		return;
+    if(self.sessionstate != "playing")
+        return;
 
-	self playSound(soundalias);
-	self sayAll(saytext);
+    self playSound(soundalias);
+    self sayAll(saytext);
 }
 //VSAY END
 
 //UTILS
 model()
 {
-	self detachAll();
-	[[game[self.pers["camouflage"] + "_model"] ]]();
+    self detachAll();
+    [[game[self.pers["camouflage"] + "_model"] ]]();
 }
 
 isBoltWeapon(sWeapon)
@@ -2495,7 +2495,7 @@ isSecondaryWeapon(sWeapon)
 }
 loadout()
 {
-	switch(self.pers["camouflage"])
+    switch(self.pers["camouflage"])
     {
     case "american":
         self giveWeapon("colt_mp");
@@ -2529,16 +2529,16 @@ loadout()
 
 dropHealth()
 {
-	if(isDefined(level.healthqueue[level.healthqueuecurrent]))
-		level.healthqueue[level.healthqueuecurrent] delete();
-	
-	level.healthqueue[level.healthqueuecurrent] = spawn("item_health", self.origin + (0, 0, 1));
-	level.healthqueue[level.healthqueuecurrent].angles = (0, randomint(360), 0);
+    if(isDefined(level.healthqueue[level.healthqueuecurrent]))
+        level.healthqueue[level.healthqueuecurrent] delete();
+    
+    level.healthqueue[level.healthqueuecurrent] = spawn("item_health", self.origin + (0, 0, 1));
+    level.healthqueue[level.healthqueuecurrent].angles = (0, randomint(360), 0);
 
-	level.healthqueuecurrent++;
-	
-	if(level.healthqueuecurrent >= 16)
-		level.healthqueuecurrent = 0;
+    level.healthqueuecurrent++;
+    
+    if(level.healthqueuecurrent >= 16)
+        level.healthqueuecurrent = 0;
 }
 
 anglesToLeft(angles)
