@@ -5,8 +5,20 @@ main()
 	level.callbackPlayerDisconnect = ::Callback_PlayerDisconnect;
 	level.callbackPlayerDamage = ::Callback_PlayerDamage;
 	level.callbackPlayerKilled = ::Callback_PlayerKilled;
-
 	maps\mp\gametypes\_callbacksetup::SetupCallbacks();
+
+    nearDistance = 0; //Distance from the camera that the fog will start
+    farDistance = 20000; //Distance from the camera that full occlusion will occur
+    red = 0.7;
+    green = 0.7;
+    blue = 0.7;
+    transitionTime = 0;
+    setCullFog(nearDistance, farDistance, red, green, blue, transitionTime);
+    ambientPlay("ambient_mp_harbor");
+    game["layoutimage"] = "zh_frenzy";
+
+    level.connectOrigin = (-3580, 2890, 2790);
+    level.connectAngles = (25, -35, 0);
 
     level.objectiveText = "Be the last man standing.";
     level.maxClients = getCvarInt("sv_maxclients");
@@ -20,7 +32,7 @@ main()
     if(getCvarInt("br_minPlayers")) {
         level.minPlayers = getCvarInt("br_minPlayers");
     }
-    level.startBattleCountdown = 30;
+    level.startBattleCountdown = 60;
     if(getCvarInt("br_startBattleCountdown")) {
         level.startBattleCountdown = getCvarInt("br_startBattleCountdown");
     }
@@ -48,7 +60,9 @@ main()
 
 
 
-    level.zoneDuration = 5;
+    level.zoneDuration = 120;
+
+    level.killcamDuration = 5;
 
 
 
@@ -69,9 +83,6 @@ main()
 	level.zone.angles = (270, 0, 0); //DEPENDS ON MODELS TAG
     level.zone.modelTag = "bip01 spine2";
     level.zone.objnum = 0;
-    objective_add(level.zone.objnum, "current", level.zone.origin, "gfx/hud/objective.tga");
-    objective_onEntity(level.zone.objnum, level.zone);
-    objective_team(level.zone.objnum, "none");
 
     level.zone.modes = [];
 
@@ -152,12 +163,12 @@ main()
 	if(!isDefined(game["state"]))
 		game["state"] = "playing";
 
-	level.mapended = false;
-    level.zone.active = false;
+	level.zone.active = false;
     level.startingBattle = false;
     level.battleStarted = false;
     level.battleOver = false;
     level.checkingVictoryRoyale = false;
+    level.noWinner = false;
 
     level.healthqueue = [];
 	level.healthqueuecurrent = 0;
@@ -195,7 +206,7 @@ Callback_StartGameType()
 	precacheShader("gfx/hud/hud@mpflag_none.tga");
 	precacheShader("gfx/hud/hud@mpflag_spectator.tga");
     precacheShader("gfx/hud/damage_feedback.dds");
-    precacheShader("gfx/hud/objective.tga");
+    precacheShader("gfx/hud/zone_center.dds");
 
     precacheStatusIcon("gfx/hud/hud@status_dead.tga");
 	precacheStatusIcon("gfx/hud/hud@status_connecting.tga");
@@ -238,6 +249,9 @@ Callback_StartGameType()
 
 	setClientNameMode("auto_change");
 
+    objective_add(level.zone.objnum, "current", level.zone.origin, "gfx/hud/zone_center.dds");
+    objective_onEntity(level.zone.objnum, level.zone);
+    objective_team(level.zone.objnum, "none");
     level.zone setModel(level.model_zone);
 
     thread manageZoneLifecycle();
@@ -249,19 +263,18 @@ Callback_PlayerConnect()
 	self waittill("begin");
 	self.statusicon = "";
 
-    self.fights = true;
-    self.inPlane = false;
-    self.jumped = false;
+    if(game["state"] == "intermission")
+	{
+        spawnIntermission();
+		return;
+	}
 
     self.pers["connected"] = true;
 	iprintln(&"MPSCRIPT_CONNECTED", self);
-	
-	if(game["state"] == "intermission")
-	{
-        printLn("#### Callback_PlayerConnect: game[\"state\"] == \"intermission\"");
-		//spawnIntermission();
-		return;
-	}
+
+    self.fights = true;
+    self.inPlane = false;
+    self.jumped = false;
 
 	level endon("intermission");
     
@@ -482,7 +495,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 	self.deaths = 1;
 
 	attackerNum = -1;
-	level.playercam = attacker getEntityNumber();
+	level.playercam = attacker;// getEntityNumber();
 
 	if(isPlayer(attacker))
 	{
@@ -493,7 +506,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 		}
 		else
 		{
-			attackerNum = attacker getEntityNumber();
+			//attackerNum = attacker getEntityNumber();
 			doKillcam = true;
 			attacker.pers["score"]++;
 			attacker.score = attacker.pers["score"];
@@ -511,9 +524,9 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 	delay = 2;	// Delay the player becoming a spectator till after he's done dying
 	wait delay;	// ?? Also required for Callback_PlayerKilled to complete before killcam can execute
     
-    if(doKillcam)
+    if(doKillcam && !level.battleOver)
     {
-        self thread killcam(attackerNum, delay);
+        self thread killcam(attacker, delay, false);
     }
 	else
 	{
@@ -548,9 +561,7 @@ spawnSpectator(origin, angles, died)
 		self spawn(origin, angles);
 	else
 	{
-        connectOrigin = (-3580, 2890, 2790);
-        connectAngles = (25, -35, 0);
-        self spawn(connectOrigin, connectAngles);
+        self spawn(level.connectOrigin, level.connectAngles);
 	}
 
 	self setClientCvar("cg_objectiveText", level.objectiveText);
@@ -601,6 +612,19 @@ spawnPlayer(origin, angles)
     }
     
     self setClientCvar("cg_objectiveText", level.objectiveText);
+}
+spawnIntermission()
+{
+	self notify("spawned");
+	self notify("end_respawn");
+	
+	resettimeout();
+
+	self.sessionstate = "intermission";
+	self.spectatorclient = -1;
+	self.archivetime = 0;
+
+	self spawn(level.connectOrigin, level.connectAngles);
 }
 
 checkBattleReady()
@@ -712,6 +736,8 @@ startBattle()
 {
     printLn("#### startBattle");
 
+    //setCvar("x_contents", "32"); //Prevent players from blocking each other when jumping
+
     level endon("battle_cancel");
     level.startingBattle = true;
 	wait level.startBattleCountdown;
@@ -775,6 +801,7 @@ startBattle()
         player thread checkPlayerJumped();
     }
     level.plane moveY(moveDistance, moveDelay);
+    level.plane playLoopSound("in_plane");
     level.planePov moveY(moveDistance, moveDelay);
 
     wait moveDelay;
@@ -786,7 +813,7 @@ startBattle()
             player.forceJump = true;
         }
     }
-    wait 2;
+    wait 3;
     everyoneJumped = true;
     for(i = 0; i < players.size; i++)
 	{
@@ -799,6 +826,7 @@ startBattle()
     }
     if(everyoneJumped)
     {
+        level.plane stopLoopSound();
         level.plane delete();
         level.planePov delete();
     }
@@ -909,6 +937,12 @@ playZone(fx, static)
 			level.zone.active = false;
 			level thread setupZone(self.nextZoneIndex);
 		}
+        else
+        {
+            wait (self.life / 1000);
+            //Destroy HUD
+            level.hud_zoneShrinkAlert destroy();
+        }
 	}
 }
 /*
@@ -948,6 +982,7 @@ checkPlayerInZone()
     self.hudInStormDarkness.y = 0;
     self.hudInStormDarkness setShader("black", 640, 480);
     self.hudInStormDarkness.alpha = 0;
+    self.hudInStormDarkness.sort = -1;
 
     self.hudInStormAlert = newClientHudElem(self);
     self.hudInStormAlert.x = 460;
@@ -1045,7 +1080,11 @@ checkPlayerJumped()
 
 	for(;;)
 	{
-		if(self useButtonPressed() || isDefined(self.forceJump)) //TODO: prevent forceJump players stuck in each other
+        //FORCE STANDING
+        if(self getStance() != "stand")
+            self setClientCvar("cl_stance", "0");
+
+		if(self useButtonPressed() || isDefined(self.forceJump))
 		{
             self.jumped = true;
 
@@ -1058,7 +1097,7 @@ checkPlayerJumped()
             self spawnPlayer(level.planePov.origin, anglesBeforeSpawn);
             self.inPlane = false;
             self showToPlayer(undefined);
-			//self setClientCvar("cg_thirdPerson", "1"); //TODO: remove after tests
+			//self setClientCvar("cg_thirdPerson", "1");
 
 			delayExitPlane = 0.35;
 			underPlaneOrigin =
@@ -1067,6 +1106,7 @@ checkPlayerJumped()
 				(level.planePov.origin[2] - 1000));
 
             self.jumpPov = spawn("script_origin", level.planePov.origin);
+
             self linkto(self.jumpPov);
 			self.jumpPov moveTo(underPlaneOrigin, delayExitPlane);
 			wait delayExitPlane;
@@ -1102,7 +1142,7 @@ checkPlayerDive()
 
     self.parachuteEnabled = false;
 
-    self.hud_parachuteStateIndicator = newClientHudElem(self); //TODO: remove after tests
+    self.hud_parachuteStateIndicator = newClientHudElem(self); //TODO: show arms/hands instead
     self.hud_parachuteStateIndicator.alignX = "center";
     self.hud_parachuteStateIndicator.alignY = "middle";
     self.hud_parachuteStateIndicator.x = 320;
@@ -1135,6 +1175,10 @@ checkPlayerDive()
     //CHECK MOVEMENTS
 	for(;;)
 	{
+        //FORCE STANDING
+        if(self getStance() != "stand")
+            self setClientCvar("cl_stance", "0");
+
         //DIRECTION KEYS CHECK
         goingForward = false;
         goingBackward = false;
@@ -1176,7 +1220,7 @@ checkPlayerDive()
             {
                 //OPENED
                 self.hud_parachuteStateIndicator.color = level.color_green;
-                self.hud_parachuteStateIndicator setText(level.text_parachuteDeployed); //TODO: show arms/hands instead
+                self.hud_parachuteStateIndicator setText(level.text_parachuteDeployed);
                 self.parachuteEnabled = true;
                 self attach(level.model_parachute, "tag_belt_back");
             }
@@ -1459,7 +1503,6 @@ checkVictoryRoyale()
 
         winner = alivePlayers[0];
         winner.hud_victoryRoyale = newClientHudElem(winner);
-        winner.hud_victoryRoyale.archived = false;
         winner.hud_victoryRoyale.alignX = "center";
         winner.hud_victoryRoyale.alignY = "middle";
         winner.hud_victoryRoyale.x = 320;
@@ -1469,6 +1512,9 @@ checkVictoryRoyale()
         winner.hud_victoryRoyale.font = "bigfixed";
         winner.hud_victoryRoyale setText(&"VICTORY ROYALE!");
 
+        level.winnerEntityNumber = winner getEntityNumber();
+        level.winnerName = winner.name;
+
         setCvar("timescale", "0.5");
         wait 0.25;
         for(x = .5; x < 1; x+= .05)
@@ -1477,9 +1523,54 @@ checkVictoryRoyale()
             setCvar("timescale", x);
         }
         setCvar("timescale", "1");
+        wait 4;
+        endMap();
+    }
+    else if(alivePlayers.size == 0)
+    {
+        level.battleOver = true;
+
+        level.hud_victoryRoyale = newHudElem();
+        level.hud_victoryRoyale.alignX = "center";
+        level.hud_victoryRoyale.alignY = "middle";
+        level.hud_victoryRoyale.x = 320;
+        level.hud_victoryRoyale.y = 100;
+        level.hud_victoryRoyale.color = level.color_red;
+        level.hud_victoryRoyale.fontScale = 1.5;
+        level.hud_victoryRoyale.font = "bigfixed";
+        level.hud_victoryRoyale setText(&"NO ONE SURVIVED!");
+
+        level.noWinner = true;
+        wait 4;
+        endMap();
     }
 
     level.checkingVictoryRoyale = false;
+}
+endMap()
+{
+    if(!level.noWinner)
+        level setupFinalKillcam();
+
+    game["state"] = "intermission";
+	level notify("intermission");
+
+	players = getEntArray("player", "classname");
+	for(i = 0; i < players.size; i++)
+	{
+		player = players[i];
+
+		player closeMenu();
+		player setClientCvar("g_scriptMainMenu", "main");
+        if(level.noWinner)
+            player setClientCvar("cg_objectiveText", "No one survived!");
+        else
+            player setClientCvar("cg_objectiveText", &"MPSCRIPT_WINS", level.winnerName);
+        
+		player spawnIntermission();
+	}
+    wait 6;
+	exitLevel(false);
 }
 
 showDamageFeedback()
@@ -1505,30 +1596,59 @@ showDamageFeedback()
         self.hitBlip destroy();
 }
 //KILLCAM FUNCTIONS
-killcam(attackerNum, delay)
+setupFinalKillcam()
 {
-	self endon("spawned");
-	
-	// killcam
-	if(attackerNum < 0)
-		return;
+    viewers = 0;
+	players = getEntArray("player", "classname");
+	for (i = 0; i < players.size; i++)
+	{
+		player = players[i];
 
-	self.sessionstate = "spectator";
-	self.spectatorclient = attackerNum;
-	self.archivetime = delay + 7;
+		if (isDefined(player.killcam) || (player.archivetime > 0))
+		{
+			// Already running killcam, stop it
+			player notify("spawned");
+			wait .05;
+			player.spectatorclient = -1;
+			player.archivetime = 0;
+		}
+
+		player thread killcam(level.playercam, 2, true);
+		viewers++;
+	}
+	if (viewers)
+		level waittill("finalKillcam_ended");
+	
+	return;
+}
+killcam(attacker, delay, finalKillcam)
+{
+    if(!finalKillcam)
+        self endon("spawned");
+
+    if(!isPlayer(attacker))
+        attacker = self;
+    self.sessionstate = "spectator";
+    self.spectatorclient = attacker getEntityNumber();
+	//if(attackerNum < 0)
+		//return;
+	//self.sessionstate = "spectator";
+	//self.spectatorclient = attackerNum;
+	self.archivetime = delay + level.killcamDuration;
 
 	// wait till the next server frame to allow code a chance to update archivetime if it needs trimming
-	wait 0.05;
+	wait .05;
 
 	if(self.archivetime <= delay)
 	{
+        printLn("### self.archivetime <= delay: return");
 		self.spectatorclient = -1;
 		self.archivetime = 0;
-	
 		return;
 	}
 
-	self.killcam = true;
+    if(!finalKillcam)
+	    self.killcam = true;
 
 	if(!isDefined(self.kc_topbar))
 	{
@@ -1560,7 +1680,7 @@ killcam(attackerNum, delay)
 		self.kc_title.fontScale = 2.5;
 	}
 	self.kc_title setText(&"MPSCRIPT_KILLCAM");
-	if(!isDefined(self.kc_skiptext))
+	if(!isDefined(self.kc_skiptext) && !finalKillcam)
 	{
 		self.kc_skiptext = newClientHudElem(self);
 		self.kc_skiptext.archived = false;
@@ -1570,21 +1690,37 @@ killcam(attackerNum, delay)
 		self.kc_skiptext.alignY = "middle";
 		self.kc_skiptext.sort = 1; // force to draw after the bars
 	}
-	self.kc_skiptext setText(&"MPSCRIPT_PRESS_ACTIVATE_TO_SKIP");
+    if(!finalKillcam)
+        self.kc_skiptext setText(&"MPSCRIPT_PRESS_ACTIVATE_TO_SKIP");
 
-	self thread waitSkipKillcamButton();
-	self thread waitKillcamTime();
-	self waittill("end_killcam");
+    if(!finalKillcam)
+    {
+        self thread waitSkipKillcamButton();
+        self thread waitKillcamTime();
+        self waittill("end_killcam");
+        self removeKillcamElements();
+    }
 
-	self removeKillcamElements();
+    if(finalKillcam)
+        if(self.archivetime > delay)
+            wait self.archivetime - .05;
 
 	self.spectatorclient = -1;
 	self.archivetime = 0;
-	self.killcam = undefined;
+    if(!finalKillcam)
+	    self.killcam = undefined;
 
-    currentorigin = self.origin;
-	currentangles = self getPlayerAngles();
-	self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles, true);
+    if(finalKillcam)
+    {
+        level notify("finalKillcam_ended");
+	    return;
+    }
+    else
+    {
+        currentorigin = self.origin;
+        currentangles = self getPlayerAngles();
+        self thread spawnSpectator(currentorigin + (0, 0, 60), currentangles, true);
+    }
 }
 waitKillcamTime()
 {
