@@ -45,7 +45,7 @@ main()
         level.instantKill_bolt = false;
     }
     level.instantKill_pistol = false;
-    if(getCvarInt("br_instantkill_pistol")) {
+    if(getCvarInt("br_instantkill_pistol") == "0") {
         level.instantKill_pistol = true;
     }
     level.instantKill_melee = true;
