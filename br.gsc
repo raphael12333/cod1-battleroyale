@@ -28,7 +28,7 @@ main()
     level.text_zoneIsShrinking = &"ZONE SHRINKING ";
     level.text_zoneWillShrink = &"ZONE SHRINKS IN ";
 
-    level.minPlayers = 20;
+    level.minPlayers = 15;
     if(getCvarInt("br_minPlayers")) {
         level.minPlayers = getCvarInt("br_minPlayers");
     }
@@ -510,10 +510,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     else
     {
         if(attacker != level.zone)
-        {
-            printLn("### Callback_PlayerKilled: level.lastKillerEntity = self");
             level.lastKillerEntity = self;
-        }
         doKillcam = false;
     }
 
@@ -1551,7 +1548,7 @@ checkVictoryRoyale()
 }
 endMap()
 {
-    if(!level.noWinner && level.lastKillerEntity != level.zone)
+    if(!level.noWinner && isDefined(level.lastKillerEntity) && level.lastKillerEntity != level.zone)
         level doFinalKillcam();
 
     game["state"] = "intermission";
@@ -1629,9 +1626,20 @@ killcam(killerEntity, delay, isFinalKillcam)
         self endon("finalKillcam_start");
     }
 
-    killerEntityNumber = killerEntity getEntityNumber();
+    if(isAlive(killerEntity))
+    {
+        killerEntityNumber = killerEntity getEntityNumber();
+    }
+    else
+    {
+        wait .05;
+        level notify("finalKillcam_ended");
+        return;
+    }
+    
     if(killerEntityNumber < 0)
     {
+        wait .05;
         level notify("finalKillcam_ended");
         return;
     }
