@@ -1047,7 +1047,7 @@ checkPlayerInZone()
                     sMeansOfDeath = "MOD_UNKNOWN";
                     sWeapon = "none";
                     vPoint = undefined;
-                    vDir = undefined;
+                    vDir = (0, 0, 0);
                     sHitLoc = "none";
                     psOffsetTime = 0;
                     self finishPlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime);
