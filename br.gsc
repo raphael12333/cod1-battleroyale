@@ -60,7 +60,7 @@ main()
 
 
     level.zoneDuration = 100;
-    level.killcamDuration = 5;
+    level.killcamDuration = 7;
 
 
 
@@ -410,7 +410,7 @@ Callback_PlayerDisconnect()
     self notify("death");
     level thread checkVictoryRoyale();
 }
-Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc)
+Callback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc) //TODO: disable camera movement when in zone
 {
     if(self.sessionteam == "spectator")
         return;
@@ -491,8 +491,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     self.statusicon = "gfx/hud/hud@status_dead.tga";
     self.deaths = 1;
 
-    attackerNum = -1;
-    level.playercam = attacker getEntityNumber();
+    level.lastKillerEntity = attacker;
 
     if(isPlayer(attacker))
     {
@@ -503,7 +502,6 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
         }
         else
         {
-            attackerNum = attacker getEntityNumber();
             doKillcam = true;
             attacker.pers["score"]++;
             attacker.score = attacker.pers["score"];
@@ -511,6 +509,11 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     }
     else
     {
+        if(attacker != level.zone)
+        {
+            printLn("### Callback_PlayerKilled: level.lastKillerEntity = self");
+            level.lastKillerEntity = self;
+        }
         doKillcam = false;
     }
 
@@ -523,7 +526,7 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
     
     if(doKillcam && !level.battleOver)
     {
-        self thread killcam(attackerNum, delay, false);
+        self thread killcam(attacker, delay, false);
     }
     else
     {
@@ -1422,7 +1425,8 @@ checkLanded()
             self notify("landed");
 
             self.hud_jump_parachute destroy();
-            self.hud_parachuteStateIndicator destroy();
+            if(isDefined(self.hud_parachuteStateIndicator))
+                self.hud_parachuteStateIndicator destroy();
 
             //Check landed under map
             if(self.origin[2] < -600)
@@ -1521,6 +1525,7 @@ checkVictoryRoyale()
             setCvar("timescale", x);
         }
         setCvar("timescale", "1");
+        wait 4;
         thread endMap();
     }
     else if(alivePlayers.size == 0)
@@ -1538,6 +1543,7 @@ checkVictoryRoyale()
         level.hud_victoryRoyale setText(&"NO ONE SURVIVED!");
 
         level.noWinner = true;
+        wait 5;
         thread endMap();
     }
 
@@ -1545,9 +1551,7 @@ checkVictoryRoyale()
 }
 endMap()
 {
-    wait 4;
-
-    if(!level.noWinner)
+    if(!level.noWinner && level.lastKillerEntity != level.zone)
         level doFinalKillcam();
 
     game["state"] = "intermission";
@@ -1567,7 +1571,7 @@ endMap()
         
         player spawnIntermission();
     }
-    wait 6;
+    wait 7;
     exitLevel(false);
 }
 
@@ -1605,28 +1609,35 @@ doFinalKillcam()
         if (isDefined(player.killcam) || (player.archivetime > 0))
         {
             // Already running killcam, stop it
-            player notify("spawned");
+            player notify("finalKillcam_start");
             wait .05;
             player.spectatorclient = -1;
             player.archivetime = 0;
         }
 
-        player thread killcam(level.playercam, 2, true);
+        player thread killcam(level.lastKillerEntity, 2, true);
         viewers++;
     }
     if (viewers)
         level waittill("finalKillcam_ended");
 }
-killcam(killerEntityNumber, delay, isFinalKillcam)
+killcam(killerEntity, delay, isFinalKillcam)
 {
     if(!isFinalKillcam)
+    {
         self endon("spawned");
-    
-    if(killerEntityNumber < 0)
-        return;
+        self endon("finalKillcam_start");
+    }
 
-    self.sessionstate = "spectator";
+    killerEntityNumber = killerEntity getEntityNumber();
+    if(killerEntityNumber < 0)
+    {
+        level notify("finalKillcam_ended");
+        return;
+    }
+        
     self.spectatorclient = killerEntityNumber;
+    self.sessionstate = "spectator";
     self.archivetime = delay + level.killcamDuration;
 
     wait .05;
