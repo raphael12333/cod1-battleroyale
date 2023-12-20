@@ -288,6 +288,9 @@ Callback_PlayerConnect()
         if(response == "open" || response == "close")
             continue;
 
+        if((response != "spectator" && response != "viewmap") && level.battleStarted)
+            continue;
+        
         if(menu == game["menu_camouflage"])
         {
             switch(response)
