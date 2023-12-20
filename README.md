@@ -13,6 +13,7 @@ ___
 ### Some TODO
 - Prevent players from getting stuck in each other when exiting plane
   - MiscMod's [_newspawn function](https://github.com/cato-a/CoDaM_MiscMod/blob/4db1d420b87b766eb9bffb352a7d9c13eaa0c851/___CoDaM_MiscMod/codam/_mm_mmm.gsc#L379) might help
+  - a solution can be to use `set x_contents "32"`
 - Make the zone to move when shrinking
 - Fill roofs and holes on the map
 - Show the full zone on compass instead of just the center
