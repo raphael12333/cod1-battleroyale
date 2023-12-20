@@ -288,8 +288,10 @@ Callback_PlayerConnect()
         if(response == "open" || response == "close")
             continue;
 
-        if((response != "spectator" && response != "viewmap") && level.battleStarted)
-            continue;
+        if(level.battleStarted)
+            if(menu == game["menu_camouflage"] || menu == game["menu_weapon_all"])
+                if(response != "spectator" && response != "viewmap")
+                    continue; //Prevent player from spawning after battle started
         
         if(menu == game["menu_camouflage"])
         {
@@ -539,8 +541,6 @@ Callback_PlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDi
 
 spawnSpectator(origin, angles, died)
 {
-    printLn("#### spawnSpectator");
-
     self notify("spawned");
     self notify("spawned_spectator");
 
@@ -629,8 +629,6 @@ spawnIntermission()
 
 checkBattleReady()
 {
-    printLn("#### checkBattleReady");
-
     level endon("battle_start");
 
     fontScale_playerCount = 1.2;
@@ -734,10 +732,6 @@ checkBattleReady()
 }
 startBattle()
 {
-    printLn("#### startBattle");
-
-    //setCvar("x_contents", "32"); //Prevent players from blocking each other when jumping
-
     level endon("battle_cancel");
     level.startingBattle = true;
     wait level.startBattleCountdown;
@@ -860,8 +854,6 @@ manageZoneLifecycle()
 }
 setupZone(zoneModeIndex)
 {
-    //printLn("### setupZone: id = " + level.zone.modes[zoneModeIndex]["id"]);
-
     if(!isDefined(level.zone.modes[zoneModeIndex]["endSize"])) //STATIC ZONE
     {
         if(level.zone.active)
@@ -920,8 +912,6 @@ setupZone(zoneModeIndex)
 }
 playZone(fx, static)
 {
-    //printLn("### playZone");
-
     if(static)
     {
         level.zoneLooper = playLoopedFX(fx, (self.life / 1000), self.origin);
@@ -1775,7 +1765,7 @@ quickcommands(response)
     switch(self.pers["camouflage"])
     {
     case "american":
-        switch(response)		
+        switch(response)
         {
         case "1":
             soundalias = "american_follow_me";
